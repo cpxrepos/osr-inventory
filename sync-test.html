@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory Sync Tester</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+  }
+  .instructions {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+  .button-group {
+    margin: 20px 0;
+  }
+  button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  .testing-status {
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  .section {
+    margin-bottom: 30px;
+  }
+  code {
+    background-color: #f1f1f1;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+<h1>Inventory Tracker - Testing Guide</h1>
+
+<div class="instructions">
+  <p>This page provides guidance on how to test the Inventory Tracker application, including both basic functionality and real-time synchronization.</p>
+</div>
+
+<div class="section">
+  <h2>Setting Up a Local HTTP Server</h2>
+  <p>This application requires a local web server to function properly. Here are several ways to set one up:</p>
+  
+  <h3>Option 1: Using Python</h3>
+  <pre><code>
+# If you have Python 3:
+python -m http.server 8080
+
+# If you have Python 2:
+python -m SimpleHTTPServer 8080
+  </code></pre>
+  <p>Then access the app at <a href="http://localhost:8080/" target="_blank">http://localhost:8080/</a></p>
+  
+  <h3>Option 2: Using Node.js</h3>
+  <pre><code>
+# Install http-server globally (one-time setup)
+npm install -g http-server
+
+# Run the server
+http-server -p 8080
+  </code></pre>
+  <p>Then access the app at <a href="http://localhost:8080/" target="_blank">http://localhost:8080/</a></p>
+  
+  <h3>Option 3: Using VS Code Live Server</h3>
+  <ol>
+    <li>Install the "Live Server" extension in VS Code</li>
+    <li>Right-click on index.html and select "Open with Live Server"</li>
+    <li>VS Code will automatically open the app in your browser</li>
+  </ol>
+  
+  <div class="button-group">
+    <button onclick="checkServerRunning()">Check if Server is Running</button>
+  </div>
+</div>
+
+<div class="section">
+  <h2>1. Basic Functionality Testing</h2>
+  <p>Test the core features of the application:</p>
+  <ul>
+    <li><strong>Character Creation:</strong> Create characters with different STR values to verify slot calculations</li>
+    <li><strong>Item Management:</strong> Add items to characters, edit items, remove items</li>
+    <li><strong>Encumbrance System:</strong> Verify speed penalties apply correctly when slots are filled</li>
+    <li><strong>Drag & Drop:</strong> Test dragging items from the library into character inventories</li>
+    <li><strong>Search:</strong> Test the item search functionality</li>
+  </ul>
+  <div class="button-group">
+    <button onclick="window.open('index.html', '_blank')">Open Main Application</button>
+  </div>
+</div>
+
+<div class="section">
+  <h2>2. Real-time Synchronization Testing</h2>
+  <p>Test the Firebase synchronization features:</p>
+  <ul>
+    <li>Open the application in multiple browser tabs or devices</li>
+    <li>Make changes in one tab and verify they appear in other tabs</li>
+    <li>Test connection status indicators when going offline/online</li>
+    <li>Verify read-only mode transitions to edit mode on interaction</li>
+  </ul>
+  <div class="button-group">
+    <button onclick="openMultipleTabs()">Open Two Sync Test Tabs</button>
+    <button onclick="testOfflineMode()">Test Offline Mode</button>
+  </div>
+</div>
+
+<div class="section">
+  <h2>3. Data Export/Import Testing</h2>
+  <p>Test the data export and import functionality:</p>
+  <ul>
+    <li>Create characters and add items</li>
+    <li>Export the data</li>
+    <li>Clear browser storage or open in a private window</li>
+    <li>Import the previously exported data</li>
+    <li>Verify all characters and their items are restored correctly</li>
+  </ul>
+</div>
+
+<div class="testing-status" id="status">
+  <h3>Testing Status</h3>
+  <p>No tests have been run yet.</p>
+</div>
+
+<script>
+  function checkServerRunning() {
+    fetch('index.html')
+      .then(response => {
+        if (response.ok) {
+          document.getElementById('status').innerHTML = `
+            <h3>Server Status</h3>
+            <p><strong>Success!</strong> Your local server is running correctly. The application is accessible.</p>
+          `;
+        }
+      })
+      .catch(error => {
+        document.getElementById('status').innerHTML = `
+          <h3>Server Status</h3>
+          <p><strong>Error:</strong> Could not access the application. Make sure your local server is running.</p>
+          <p>Remember that you cannot simply open the HTML files directly from the file system - you need a web server.</p>
+        `;
+      });
+  }
+
+  function openMultipleTabs() {
+    window.open('index.html?session=tab1', '_blank', 'width=600,height=800,left=50,top=50');
+    setTimeout(() => {
+      window.open('index.html?session=tab2', '_blank', 'width=600,height=800,left=670,top=50');
+    }, 1000);
+    
+    document.getElementById('status').innerHTML = `
+      <h3>Testing Status</h3>
+      <p><strong>Multiple Tabs Test:</strong> Two browser tabs have been opened for sync testing.</p>
+      <p>Instructions:</p>
+      <ol>
+        <li>In Tab 1: Create a character and add some items to their inventory</li>
+        <li>In Tab 2: Observe that the character and items appear automatically</li>
+        <li>In Tab 2: Modify the character or items</li>
+        <li>In Tab 1: Observe that the changes sync back</li>
+        <li>Look for the green notification in the upper right that says "Changes synced from another user"</li>
+      </ol>
+    `;
+  }
+
+  function testOfflineMode() {
+    document.getElementById('status').innerHTML = `
+      <h3>Testing Status</h3>
+      <p><strong>Offline Mode Test:</strong> Instructions to test offline functionality:</p>
+      <ol>
+        <li>Open the application in a browser tab</li>
+        <li>In Chrome DevTools (F12), go to the Network tab</li>
+        <li>Check the "Offline" checkbox to simulate being offline</li>
+        <li>Verify the connection status indicator shows "Offline"</li>
+        <li>Make changes to characters or items</li>
+        <li>Uncheck "Offline" to reconnect</li>
+        <li>Verify your changes are synchronized to Firebase</li>
+        <li>Open another tab to confirm the changes propagated</li>
+      </ol>
+    `;
+  }
+</script>
+</body>
+</html>

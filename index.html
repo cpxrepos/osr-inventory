@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory Tracker — External Items, Multi‑slot, Column View</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  /* Notification styles */
+  /* Sync notification styles removed */
+  
+  #connection-status {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    z-index: 1000;
+  }
+  
+  #connection-status.online {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  #connection-status.offline {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  #read-only-status {
+    position: fixed;
+    top: 40px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+  }
+  
+  #read-only-status.read-only {
+    background-color: #ff9800;
+    color: white;
+  }
+  
+  #read-only-status.edit-mode {
+    background-color: #2196F3;
+    color: white;
+  }
+</style>
+</head>
+<body>
+<!-- Sync notification removed -->
+<div id="connection-status" class="offline">Offline</div>
+<div id="read-only-status" class="read-only">Read-Only Mode</div>
+<header>
+  <h1>Inventory Tracker</h1>
+  <div class="sub">Slots‑only slowdown from 120' base → 90'/60'/30' when empty slots drop below 6 / 4 / 2.</div>
+</header>
+
+<main>
+  <!-- Left: Characters -->
+  <section id="leftPane">
+    <div class="sec-head">
+      <div class="sec-title">Characters</div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="toggleLeft" aria-expanded="true" aria-controls="leftContent">Collapse</button>
+    </div>
+    <div class="content" id="leftContent">
+      <div class="pane">
+        <div class="form-grid">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" placeholder="Taryk the Stout" />
+          </div>
+          <div>
+            <label for="str">STR</label>
+            <input id="str" type="number" value="18" min="1" step="1" />
+          </div>
+          <button id="addChar">Add Character</button>
+        </div>
+        <div class="small">
+          Slots: 19 if STR ≥ 18; 18 if ≥ 16; 17 if ≥ 13; 16 if ≥ 9; 15 if ≥ 6; 14 if ≥ 4; else 13.
+        </div>
+
+        <div class="char-list" id="charList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Center: Party Inventories -->
+  <section>
+    <div class="sec-head"><div class="sec-title">Party Inventories</div></div>
+    <div class="chars" id="chars"></div>
+  </section>
+
+  <!-- Right: Item Library -->
+  <section id="rightPane">
+    <div class="sec-head">
+      <div class="sec-title">Item Library</div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="toggleRight" aria-expanded="true" aria-controls="rightContent">Collapse</button>
+    </div>
+    <div class="content" id="rightContent">
+      <div class="pane">
+        <div class="search">
+          <input id="q" placeholder="Search items..." />
+        </div>
+        <div class="items" id="itemList"></div>
+
+        <div class="export-area">
+          <button class="btn" id="exportDataBtn">Export Data</button>
+          <button class="btn" id="importDataBtn">Import Data</button>
+        </div>
+        <textarea id="io" class="hidden"></textarea>
+        <div class="small muted">"Export/Import Data" backs up character and inventory information.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Load the application code -->
+<script type="module" src="js/main.js"></script>
+
+<!-- Notification Handler -->
+<script type="module">
+  // Sync notification has been removed
+  
+  // Check connection status
+  function updateConnectionStatus() {
+    const status = document.getElementById('connection-status');
+    
+    if (navigator.onLine) {
+      status.textContent = 'Connected';
+      status.className = 'online';
+    } else {
+      status.textContent = 'Offline';
+      status.className = 'offline';
+    }
+  }
+  
+  // Initial check
+  updateConnectionStatus();
+  
+  // Listen for changes
+  window.addEventListener('online', updateConnectionStatus);
+  window.addEventListener('offline', updateConnectionStatus);
+</script>
+</body>
+</html>

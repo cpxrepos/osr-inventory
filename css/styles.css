@@ -1,0 +1,392 @@
+:root{
+  --left: 320px;
+  --right: 320px;
+  --rail: 36px;
+
+  --bg:#0f1115; --panel:#151821; --muted:#8b93a7; --text:#e7e9ee; --accent:#69a9ff; --danger:#ff6b6b;
+  --slot:#1c2130; --slot-border:#2a3042; --slot-hover:#243049; --good:#47d690; --warn:#ffce5c; --bad:#ff6b6b;
+  --radius:10px;
+}
+
+/* Sub-slot styles */
+.sub-slots-info {
+  font-size: 0.8em;
+  color: #8b93a7;
+  margin-left: 5px;
+}
+
+.sub-slots-container {
+  display: flex;
+  gap: 2px;
+  margin-top: 3px;
+}
+
+.sub-slot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.sub-slot.filled {
+  background-color: var(--good);
+}
+
+.sub-slot.empty {
+  background-color: #1f2536;
+  border: 1px solid #2a3042;
+}
+
+.sub-slot-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.sub-slot-btn {
+  font-size: 0.7em;
+  padding: 0px 4px;
+  background-color: #0f1421;
+  border: 1px solid #2a3042;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #cfd7ff;
+}
+
+.sub-slot-btn:hover {
+  background-color: #141c2d;
+}
+
+/* Coin Tracking */
+.coin-slots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+  padding: 5px;
+  border-radius: 4px;
+  background-color: #0f1421;
+}
+
+.coin-type-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.coin-icon {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #000000;
+  text-align: center;
+  line-height: 30px;
+  font-size: 12px;
+  font-weight: bold;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.coin-amount {
+  width: 50px;
+  text-align: right;
+  padding: 3px 6px;
+  border: 1px solid #2a3042;
+  border-radius: 4px;
+  background: #0f1421;
+  color: #e7e9ee;
+  font-size: 14px;
+}
+
+/* Hide spinner arrows for coin amount inputs */
+input[type="number"].coin-amount::-webkit-inner-spin-button,
+input[type="number"].coin-amount::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"].coin-amount {
+  -moz-appearance: textfield; /* Firefox */
+  appearance: textfield;
+}
+
+.coin-limit {
+  color: #8b93a7;
+  font-size: 12px;
+}
+
+.coin-summary {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  padding: 8px 0;
+  color: #e7e9ee;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.coin-summary:hover {
+  color: var(--accent);
+  background-color: rgba(105, 169, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* Make sure the slot with coin purse is clickable */
+.slot:has(.coin-summary) {
+  cursor: pointer;
+}
+*{ box-sizing:border-box; }
+body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif; background:var(--bg); color:#e7e9ee; }
+header{ padding:14px 18px; display:flex; gap:16px; align-items:center; background:#0b0d12; border-bottom:1px solid #1b2030; position:sticky; top:0; z-index:5;}
+header h1{ font-size:16px; margin:0; letter-spacing:.5px; color:#cfd7ff; }
+header .sub{ font-size:12px; color:var(--muted); }
+
+main{ display:grid; grid-template-columns: var(--left) 1fr var(--right); gap:16px; padding:16px; }
+
+section{ background:var(--panel); border:1px solid #202636; border-radius:var(--radius); overflow:hidden; }
+.pane{ padding:12px; }
+.sec-head{
+  display:flex; align-items:center; gap:8px; padding:10px 12px;
+  border-bottom:1px solid #1f2536;
+}
+.sec-title{ font-size:13px; letter-spacing:.6px; text-transform:uppercase; color:#c6cbe0; }
+.spacer{ flex:1; }
+.icon-btn{
+  border:1px solid #2a3042; background:#0f1421; color:#cfd7ff; padding:6px 8px;
+  border-radius:8px; cursor:pointer; font-size:12px;
+}
+.icon-btn:hover{ background:#141c2d; }
+.collapsed .content{ display:none; }
+.collapsed{ width:var(--rail) !important; min-width:var(--rail) !important; }
+.collapsed .sec-head{ writing-mode:vertical-rl; transform:rotate(180deg); justify-content:center; gap:6px; }
+.collapsed .sec-title{ text-transform:none; letter-spacing:.2px; }
+
+/* Characters form + list */
+.form-grid{ display:grid; grid-template-columns: 1fr 80px; gap:8px; align-items:end; }
+.form-grid label{ font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+.form-grid input{ width:100%; padding:8px; border-radius:8px; border:1px solid #2a3042; background:#0f1421; color:#e7e9ee; }
+.form-grid button{ grid-column:1/-1; padding:10px 12px; border:0; border-radius:8px; background:var(--accent); color:#0a0e16; font-weight:700; cursor:pointer; }
+.small{ font-size:12px; color:var(--muted); margin-top:8px; }
+
+.char-list{ margin-top:10px; border-top:1px solid #1f2536; padding-top:10px; display:grid; gap:8px; }
+.char-row{
+  display:flex; align-items:center; gap:8px; justify-content:space-between;
+  border:1px solid #23293a; border-radius:8px; padding:8px 10px; background:#101626;
+  font-size:13px; cursor:grab;
+}
+.char-row.hidden {
+  border: 1px dashed #23293a;
+  opacity: 0.7;
+}
+.char-row .action-buttons {
+  display: flex;
+  gap: 4px;
+}
+.char-row .meta{ color:var(--muted); font-size:12px; }
+.char-actions{ display:flex; gap:6px; align-items:center; }
+.icon-btn.delete-btn, .icon-btn.visibility-btn { 
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.icon-btn.delete-btn { color: var(--danger); }
+.char-row .drag-handle { 
+  color: #454c63; 
+  cursor: grab; 
+  font-size: 14px; 
+  padding: 0 4px; 
+  margin-right: 4px;
+  user-select: none;
+}
+.char-row:active { cursor: grabbing; }
+.char-row.dragging { 
+  opacity: 0.6; 
+  border: 1px dashed var(--accent);
+  background: #182038;
+}
+.char-row.drag-over { 
+  border: 1px solid var(--accent); 
+  box-shadow: 0 0 0 2px rgba(105, 169, 255, 0.3);
+  background: #192135;
+}
+
+/* Party area: characters as columns */
+.chars{
+  display:grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 1fr);
+  gap:16px;
+  padding:12px;
+  overflow-x:auto;
+}
+.char{ border:1px solid #23293a; border-radius:12px; background:#121723; min-height:200px; }
+.char-header{ display:flex; gap:12px; align-items:baseline; padding:12px; border-bottom:1px solid #1f2536; }
+.char-name{ font-size:16px; font-weight:700; }
+.char-meta{ margin-left:auto; display:flex; gap:10px; font-size:12px; color:#8b93a7; flex-wrap:wrap; }
+.pill{ padding:2px 8px; border-radius:999px; border:1px solid #2a3042; }
+.enc-good{ color:var(--good); border-color:#274136; }
+.enc-warn{ color:var(--warn); border-color:#4b3f22; }
+.enc-bad{  color:var(--bad);  border-color:#4a2222; }
+
+.inv{ padding:8px; display:flex; flex-direction:column; gap:8px; }
+.inventory-section{ display:flex; flex-direction:column; gap:4px; }
+.section-title{ 
+  font-size:14px; 
+  font-weight:700; 
+  color:#cfd6ef; 
+  padding:0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .collapse-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+}
+.slots{ flex:1; display:flex; flex-direction:column; gap:3px; min-width:220px; }
+.slot{
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  padding:4px 8px; min-height:24px; background:var(--slot); border:1px dashed #2a3042;
+  border-radius:6px; color:#cfd6ef; font-size:12px;
+}
+.slot.empty{ opacity:.85; color:#8690a8; }
+.slot.dragover{ background:var(--slot-hover); border-style:solid; }
+.item-tag{ font-size:11px; }
+.slot-actions{ display:flex; gap:3px; }
+.btn{ border:1px solid #2a3042; background:#0e1421; color:#cfd7ff; padding:2px 5px; border-radius:4px; cursor:pointer; font-size:10px; }
+.btn:hover{ background:#141c2d; }
+.danger{ color:var(--danger); border-color:#3b2228; }
+
+/* Positional/threshold styles */
+.slot.warn  { box-shadow: inset 0 0 0 2px #ffce5c55; background-image: linear-gradient(0deg, #3a2f12 0%, transparent 60%); } /* yellow */
+.slot.danger{ box-shadow: inset 0 0 0 2px #ff6b6b66; background-image: linear-gradient(0deg, #3a1515 0%, transparent 60%); } /* red */
+.slot.orange{ box-shadow: inset 0 0 0 2px #ff9f1a66; background-image: linear-gradient(0deg, #3a260f 0%, transparent 60%); } /* orange */
+
+/* Items */
+.search{ display:flex; gap:8px; }
+.search input{ flex:1; padding:8px; border-radius:8px; border:1px solid #2a3042; background:#0f1421; color:#e7e9ee; }
+/* Create Item button and form styles */
+.create-item-container {
+  margin-bottom: 12px;
+}
+
+.create-item-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: #0a0e16;
+  font-weight: 700;
+  border: none;
+}
+
+.create-item-form {
+  padding: 12px;
+  border: 1px solid #2a3042;
+  border-radius: 10px;
+  background: #101626;
+  margin-bottom: 16px;
+}
+
+/* General hidden class used throughout the app */
+.hidden {
+  display: none !important;
+}
+
+/* Make coin containers more distinctive */
+.coin-slots-container {
+  background-color: #0f1421;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #2a3042;
+}
+
+.create-item-form.hidden {
+  display: none;
+}
+
+.create-item-form .form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.form-buttons .btn {
+  flex: 1;
+  padding: 8px;
+}
+
+.form-buttons .btn:first-child {
+  background: var(--accent);
+  color: #0a0e16;
+  font-weight: 700;
+  border-color: var(--accent);
+}
+
+/* Items list */
+.items{ margin-top:10px; display:grid; gap:8px; max-height:65vh; overflow:auto; }
+.item{ 
+  padding:8px 10px; 
+  border:1px solid #2a3042; 
+  border-radius:10px; 
+  background:#101626; 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  cursor:grab; 
+}
+.item:active{ cursor:grabbing; }
+
+/* Item actions */
+.item-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+}
+
+.item .icon-btn {
+  padding: 2px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.item .delete-btn {
+  color: var(--danger);
+  border-color: #3b2228;
+}
+
+.export-area{ margin-top:10px; display:flex; gap:8px; }
+.export-area button{ flex:1; }
+textarea.hidden{ display:none; }
+
+@media (max-width:1100px){
+  /* columns scroll horizontally; no layout changes needed */
+}
