@@ -5,7 +5,8 @@ import {
   slotsFromSTR,
   speedFactorFromEmpty,
   fmtSpeed,
-  slowdownLabel
+  slowdownLabel,
+  debounce
 } from '../helpers.js';
 
 import { createSlot } from './slot.js';
@@ -358,10 +359,15 @@ function renderChars() {
     notesArea.className = "notes-textarea";
     notesArea.placeholder = "Add notes...";
     notesArea.value = c.notes;
-    notesArea.addEventListener("input", () => {
+    // Update local state immediately and only persist the current notes field
+    const debouncedSaveNotes = debounce(() => {
       enableWrites();
+      saveState(`inventory/chars/${ci}/notes`, c.notes);
+    }, 400);
+
+    notesArea.addEventListener("input", () => {
       c.notes = notesArea.value;
-      saveState();
+      debouncedSaveNotes();
     });
 
     notesSection.appendChild(notesArea);
