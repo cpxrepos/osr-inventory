@@ -24,9 +24,9 @@ function renderCharList() {
       state.ui.hiddenChars = [];
     }
     
-    // Add hidden class if character is hidden
+    // Add character-specific hidden class if character is hidden
     const isHidden = state.ui.hiddenChars.includes(i);
-    row.className = `char-row${isHidden ? ' hidden' : ''}`;
+    row.className = `char-row${isHidden ? ' char-hidden' : ''}`;
     
     // Add draggable attribute to enable drag functionality
     row.draggable = true;
