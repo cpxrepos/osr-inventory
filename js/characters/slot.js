@@ -150,58 +150,18 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         slotObj.expanded = false;
       }
       
-      // Calculate total coins and value
+      // Calculate total coins and build a summary of coin amounts
       let totalCoins = 0;
-      let totalValue = 0;
-      
+      const valueParts = [];
       (slotObj.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"]).forEach(coinType => {
         const amount = slotObj.coinAmounts[coinType] || 0;
         totalCoins += amount;
-        
-        // Calculate value based on conversion rates
-        switch(coinType) {
-          case 'PP':
-            totalValue += amount * 10; // PP is worth 10 GP
-            break;
-          case 'GP':
-            totalValue += amount; // GP is base unit
-            break;
-          case 'SP':
-            totalValue += amount / 10; // SP is base unit
-            break;
-          case 'CP':
-            totalValue += amount / 100; // 10 CP = 1 SP
-            break;
-          case 'EP':
-            totalValue += amount / 2; // 1 EP = 5 SP (half a GP)
-            break;
-          case 'Gems':
-            // Gems have 0 value
-            break;
+        if (amount > 0) {
+          valueParts.push(`${amount}${coinType}`);
         }
       });
-      
-      // Format total value in terms of highest denomination
-      let formattedValue = '';
-      if (totalValue >= 100) {
-        // Display in PP when value is 100+ GP (10+ PP)
-        const pp = Math.floor(totalValue / 100);
-        const remainder = totalValue % 100;
-        const gp = Math.floor(remainder / 10);
-        const sp = Math.floor(remainder % 10);
-        
-        formattedValue = `${pp}PP`;
-        if (gp > 0 || sp > 0) formattedValue += ` ${gp}GP`;
-        if (sp > 0) formattedValue += ` ${sp}SP`;
-      } else if (totalValue >= 10) {
-        const gp = Math.floor(totalValue / 10);
-        const sp = Math.floor(totalValue % 10);
-        formattedValue = `${gp}GP${sp > 0 ? ` ${sp}SP` : ''}`;
-      } else if (totalValue > 0) {
-        formattedValue = `${Math.floor(totalValue)}SP`;
-      } else {
-        formattedValue = '0';
-      }
+
+      const formattedValue = valueParts.join(' ') || '0';
       
       // Add collapsed summary or expanded coin inputs - use CSS classes instead of inline styles
       slotContent += `
@@ -435,8 +395,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             // Add elements to row
             row.appendChild(coinIcon);
             row.appendChild(input);
-            row.appendChild(document.createTextNode('/100'));
-            
+
             // Add row to container
             coinContainer.appendChild(row);
           });
