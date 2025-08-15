@@ -360,6 +360,7 @@ function renderChars() {
     notesArea.placeholder = "Add notes...";
     notesArea.value = c.notes;
     // Update local state immediately and only persist the current notes field
+
     const debouncedSaveNotes = debounce(() => {
       enableWrites();
       saveState(`inventory/chars/${ci}/notes`, c.notes);
@@ -367,8 +368,10 @@ function renderChars() {
 
     notesArea.addEventListener("input", () => {
       c.notes = notesArea.value;
+
       debouncedSaveNotes();
     });
+
 
     notesSection.appendChild(notesArea);
     inv.appendChild(notesSection);
