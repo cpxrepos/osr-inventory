@@ -23,7 +23,6 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   slot.dataset.char = ci;
   slot.dataset.slot = si;
   slot.dataset.section = section; // Identify which inventory section this is
-  const isSelectedChar = ci === state.ui.selectedChar;
 
   // Bottom-up coloring for backpack and large sack (encumbrance rules apply to both)
   if (section === "backpack" || section === "largeSack") {
@@ -56,30 +55,28 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   // Content
   if (isEmpty) {
     slot.innerHTML = `<span class="item-tag">Empty</span>`;
-
-    if (isSelectedChar) {
-      // Add double click handler for empty slots to add new items
-      slot.addEventListener("dblclick", () => {
-        enableWrites(); // Enable writes on item edit
-        // Create a new single-slot item with "New Item" name
-        slotsArray[si] = { name: "New Item", slots: 1, head: true };
-        saveState(ci);
-        renderChars();
-        renderCharList();
-
-        // Immediately trigger the edit functionality for this new item
-        // We need to find the item after re-rendering
-        setTimeout(() => {
-          const newSlot = document.querySelector(`.slot[data-char="${ci}"][data-slot="${si}"][data-section="${section}"]`);
-          if (newSlot) {
-            const editButton = newSlot.querySelector('button[data-action="edit"]');
-            if (editButton) {
-              editButton.click();
-            }
+    
+    // Add double click handler for empty slots to add new items
+    slot.addEventListener("dblclick", () => {
+      enableWrites(); // Enable writes on item edit
+      // Create a new single-slot item with "New Item" name
+      slotsArray[si] = { name: "New Item", slots: 1, head: true };
+      saveState();
+      renderChars();
+      renderCharList();
+      
+      // Immediately trigger the edit functionality for this new item
+      // We need to find the item after re-rendering
+      setTimeout(() => {
+        const newSlot = document.querySelector(`.slot[data-char="${ci}"][data-slot="${si}"][data-section="${section}"]`);
+        if (newSlot) {
+          const editButton = newSlot.querySelector('button[data-action="edit"]');
+          if (editButton) {
+            editButton.click();
           }
-        }, 50);
-      });
-    }
+        }
+      }, 50);
+    });
   } else if (isHead) {
     // Check if item has sub-slots
     const hasSubSlots = slotObj.hasSubSlots || false;
@@ -88,7 +85,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     // Initialize filledSubSlots if it doesn't exist
     if (hasSubSlots && slotObj.filledSubSlots === undefined) {
       slotObj.filledSubSlots = maxSubSlots; // Start with all sub-slots filled
-      saveState(ci);
+      saveState();
     }
     
     let slotContent = `
@@ -145,7 +142,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             }
           }
         }
-        saveState(ci);
+        saveState();
       }
       
       // Initialize expanded state if it doesn't exist
@@ -273,7 +270,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       enableWrites(); // Enable writes on item drop
       const targetArray = state.chars[tci][targetSection];
       tryPlaceMulti(tci, tsi, src.name, Math.max(1, Number(src.slots || 1)), targetArray, targetSection, src);
-      saveState(ci);
+      saveState(); 
       renderChars(); 
       renderCharList();
     }
@@ -284,41 +281,40 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       const sourceArray = state.chars[fromChar][sourceSection];
       const targetArray = state.chars[tci][targetSection];
       moveMulti(fromChar, headIndex, tci, tsi, length, sourceArray, targetArray, sourceSection, targetSection);
-      saveState(fromChar);
-      saveState(tci);
-      renderChars();
+      saveState(); 
+      renderChars(); 
       renderCharList();
     }
   });
 
   // Make multi-slot heads draggable
-  if (isHead && isSelectedChar) {
+  if (isHead) {
     slot.draggable = true;
     slot.addEventListener("dragstart", e => {
       e.dataTransfer.setData("text/plain", JSON.stringify({
-        type: "slotHead",
-        fromChar: ci,
-        headIndex: si,
+        type: "slotHead", 
+        fromChar: ci, 
+        headIndex: si, 
         section: section,
         length: slotsArray[si].slots || 1
       }));
     });
   }
-  // Edit / Remove
-  if (isHead && isSelectedChar) {
-    slot.addEventListener("dblclick", () => {
-      enableWrites(); // Enable writes on item edit
-      const cur = slotsArray[si];
-      const name = prompt("Item name:", cur.name);
-      if (name === null) return;
-      slotsArray[si] = { name, slots: cur.slots, head: true };
-      for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
 
-      saveState(ci);
-      renderChars();
-      renderCharList();
-    });
-  }
+  // Edit / Remove
+  slot.addEventListener("dblclick", () => {
+    if (!isHead) return;
+    enableWrites(); // Enable writes on item edit
+    const cur = slotsArray[si];
+    const name = prompt("Item name:", cur.name);
+    if (name === null) return;
+    slotsArray[si] = { name, slots: cur.slots, head: true };
+    for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
+    
+    saveState(); 
+    renderChars(); 
+    renderCharList();
+  });
 
   // Right-click functionality for item removal has been disabled
   slot.addEventListener("contextmenu", (e) => {
@@ -327,7 +323,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   });
 
   // Add event listener for coin amount updates
-  if (isHead && isSelectedChar && (slotObj.hasCoinSlots || (slotObj.name && slotObj.name.toLowerCase().includes('coin')))) {
+  if (isHead && (slotObj.hasCoinSlots || (slotObj.name && slotObj.name.toLowerCase().includes('coin')))) {
     // Ensure it has proper coin purse properties
     if (!slotObj.hasCoinSlots) {
       slotObj.hasCoinSlots = true;
@@ -338,7 +334,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           slotObj.coinAmounts[type] = 0;
         });
       }
-      saveState(ci);
+      saveState();
     }
     // Toggle expanded state when clicking on the slot
     slot.addEventListener('click', (e) => {
@@ -433,7 +429,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             input.addEventListener('change', (e) => {
               enableWrites();
               slotObj.coinAmounts[coinType] = parseInt(e.target.value) || 0;
-              saveState(ci);
+              saveState();
             });
             
             // Add elements to row
@@ -453,7 +449,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           closeBtn.textContent = 'Close';
           closeBtn.addEventListener('click', () => {
             slotObj.expanded = false;
-            saveState(ci);
+            saveState();
             renderChars(); // Re-render to show closed state
           });
           
@@ -475,10 +471,10 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           slot.style.border = '2px solid #69a9ff';
           
           // Save state but don't re-render
-          saveState(ci);
+          saveState();
         } else {
           // Let the regular render cycle handle collapsing
-          saveState(ci);
+          saveState();
           renderChars();
         }
       } else {
@@ -516,7 +512,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         // Update the coin amount in the state
         slotObj.coinAmounts = slotObj.coinAmounts || {};
         slotObj.coinAmounts[coinType] = value;
-        saveState(ci);
+        saveState();
         renderChars(); // Re-render to update coin limits
       });
     });
@@ -527,82 +523,113 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         // If click is outside the current slot
         if (!slot.contains(e.target)) {
           slotObj.expanded = false;
-          saveState(ci);
+          saveState();
           renderChars();
           document.removeEventListener('click', closeExpandedCoinPurse);
         }
       });
     }
   }
-  if (isSelectedChar) {
-    slot.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      if (btn.dataset.action === "remove") {
-        enableWrites();
-        const headIdx = si;
-        if (section === "equipped" && slotObj && slotObj.head) {
-          if (slotObj.name === "Sack (small)" && state.chars[ci].smallSack) {
-            const hasItems = state.chars[ci].smallSack.some(item => item !== null);
-            if (hasItems) {
-              alert("You must empty the Small Sack before removing it from equipped.");
-              return;
-            }
-          } else if (slotObj.name === "Sack (large)" && state.chars[ci].largeSack) {
-            const hasItems = state.chars[ci].largeSack.some(item => item !== null);
-            if (hasItems) {
-              alert("You must empty the Large Sack before removing it from equipped.");
-              return;
-            }
+  
+  slot.addEventListener("click", (e) => {
+    const btn = e.target.closest("button"); 
+    if (!btn) return;
+    if (btn.dataset.action === "remove") {
+      enableWrites(); // Enable writes on remove button
+      const headIdx = si;
+      
+      // Check if this is a sack in the equipped section
+      if (section === "equipped" && slotObj && slotObj.head) {
+        if (slotObj.name === "Sack (small)" && state.chars[ci].smallSack) {
+          // Check if small sack contains any items
+          const hasItems = state.chars[ci].smallSack.some(item => item !== null);
+          if (hasItems) {
+            alert("You must empty the Small Sack before removing it from equipped.");
+            return;
           }
-        }
-        removeMulti(ci, headIdx, slotsArray, section);
-        saveState(ci);
-        renderChars();
-        renderCharList();
-      } else if (btn.dataset.action === "edit") {
-        enableWrites();
-        const cur = slotsArray[si];
-        const name = prompt("Item name:", cur.name);
-        if (name === null) return;
-        const hasSubSlots = cur.hasSubSlots || false;
-        const maxSubSlots = cur.maxSubSlots || 1;
-        const filledSubSlots = cur.filledSubSlots !== undefined ? cur.filledSubSlots : maxSubSlots;
-        const subSlotName = cur.subSlotName || 'unit';
-        const hasCoinSlots = cur.hasCoinSlots || false;
-        const coinTypes = cur.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"];
-        const coinAmounts = cur.coinAmounts || {};
-        slotsArray[si] = { name, slots: cur.slots, head: true, hasSubSlots, maxSubSlots, filledSubSlots, subSlotName, hasCoinSlots, coinTypes, coinAmounts };
-        for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
-        saveState(ci);
-        renderChars();
-        renderCharList();
-      } else if (btn.dataset.action === "use") {
-        enableWrites();
-        const cur = slotsArray[si];
-        if (cur.hasSubSlots && cur.filledSubSlots > 0) {
-          cur.filledSubSlots--;
-          if (cur.filledSubSlots === 0) {
-            if (confirm(`All ${cur.subSlotName}s have been used. Remove the item?`)) {
-              removeMulti(ci, si, slotsArray, section);
-            }
+        } else if (slotObj.name === "Sack (large)" && state.chars[ci].largeSack) {
+          // Check if large sack contains any items
+          const hasItems = state.chars[ci].largeSack.some(item => item !== null);
+          if (hasItems) {
+            alert("You must empty the Large Sack before removing it from equipped.");
+            return;
           }
-          saveState(ci);
-          renderChars();
-          renderCharList();
-        }
-      } else if (btn.dataset.action === "refill") {
-        enableWrites();
-        const cur = slotsArray[si];
-        if (cur.hasSubSlots && cur.filledSubSlots < cur.maxSubSlots) {
-          cur.filledSubSlots++;
-          saveState(ci);
-          renderChars();
-          renderCharList();
         }
       }
-    });
-  }
+      
+      removeMulti(ci, headIdx, slotsArray, section);
+      saveState(); 
+      renderChars(); 
+      renderCharList();
+    } else if (btn.dataset.action === "edit") {
+      enableWrites(); // Enable writes on edit button
+      const cur = slotsArray[si];
+      const name = prompt("Item name:", cur.name); 
+      if (name === null) return;
+      
+      // Preserve sub-slot properties when editing
+      const hasSubSlots = cur.hasSubSlots || false;
+      const maxSubSlots = cur.maxSubSlots || 1;
+      const filledSubSlots = cur.filledSubSlots !== undefined ? cur.filledSubSlots : maxSubSlots;
+      const subSlotName = cur.subSlotName || 'unit';
+      
+      // Preserve coin slot properties when editing
+      const hasCoinSlots = cur.hasCoinSlots || false;
+      const coinTypes = cur.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"];
+      const coinAmounts = cur.coinAmounts || {};
+      
+      slotsArray[si] = { 
+        name, 
+        slots: cur.slots, 
+        head: true,
+        hasSubSlots,
+        maxSubSlots,
+        filledSubSlots,
+        subSlotName,
+        hasCoinSlots,
+        coinTypes,
+        coinAmounts
+      };
+      
+      for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
+      
+      saveState(); 
+      renderChars(); 
+      renderCharList();
+    } 
+    else if (btn.dataset.action === "use") {
+      // Handle consuming one sub-slot
+      enableWrites();
+      const cur = slotsArray[si];
+      
+      if (cur.hasSubSlots && cur.filledSubSlots > 0) {
+        cur.filledSubSlots--;
+        
+        // If all sub-slots are used, ask if the user wants to remove the item
+        if (cur.filledSubSlots === 0) {
+          if (confirm(`All ${cur.subSlotName}s have been used. Remove the item?`)) {
+            removeMulti(ci, si, slotsArray, section);
+          }
+        }
+        
+        saveState();
+        renderChars();
+        renderCharList();
+      }
+    }
+    else if (btn.dataset.action === "refill") {
+      // Handle refilling one sub-slot
+      enableWrites();
+      const cur = slotsArray[si];
+      
+      if (cur.hasSubSlots && cur.filledSubSlots < cur.maxSubSlots) {
+        cur.filledSubSlots++;
+        saveState();
+        renderChars();
+        renderCharList();
+      }
+    }
+  });
 
   return slot;
 }

@@ -1,10 +1,10 @@
 /* ===== State & Persistence ===== */
-import {
-  database,
-  ref,
-  onValue,
-  set,
-  get,
+import { 
+  database, 
+  ref, 
+  onValue, 
+  set, 
+  update,
   sessionId
 } from './firebase-config.js';
 
@@ -12,11 +12,10 @@ import {
 const state = {
   items: [],              // loaded from items.json
   chars: [],
-  ui: {
-    leftCollapsed: false,
+  ui: { 
+    leftCollapsed: false, 
     rightCollapsed: false,
-    hiddenChars: [],       // Track which characters are hidden
-    selectedChar: null     // Currently selected character index
+    hiddenChars: []       // Track which characters are hidden
   },
   readOnlyMode: true      // Start in read-only mode by default
 };
@@ -39,52 +38,22 @@ if (localState) {
 // Flag to prevent sync loops
 let isSyncing = false;
 
-// Generate simple unique IDs when needed
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
-}
-
 // Save state to local storage and Firebase
-function saveState(charIndex) {
+function saveState() {
   // Always save to localStorage for quick loading next time
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
-
+  
   // Don't sync to Firebase if we're currently processing a sync from Firebase
   // or if we're in read-only mode and haven't had user interaction yet
   if (isSyncing || state.readOnlyMode) return;
-
-  // If a specific character index is provided, only update that character
-  if (typeof charIndex === 'number') {
-    const c = state.chars[charIndex];
-    if (!c) return;
-
-    // Ensure the character has an ID
-    if (!c.id) c.id = genId();
-
-    const charRef = ref(database, `inventory/chars/${c.id}`);
-    get(charRef).then((snap) => {
-      const data = snap.val();
-      if (data && data.lastUpdated && data.lastUpdated !== c.lastUpdated) {
-        alert(`${c.name} has newer data on the server. Please reload before saving.`);
-        return;
-      }
-      const payload = {
-        ...c,
-        order: charIndex,
-        lastUpdated: Date.now(),
-        lastUpdatedBy: sessionId
-      };
-      set(charRef, payload);
-      c.lastUpdated = payload.lastUpdated;
-    });
-  } else {
-    // Global save (items, etc.)
-    set(ref(database, 'inventory/items'), {
-      items: state.items,
-      lastUpdated: Date.now(),
-      lastUpdatedBy: sessionId
-    });
-  }
+  
+  // Save to Firebase
+  set(ref(database, 'inventory'), {
+    items: state.items,
+    chars: state.chars,
+    lastUpdated: Date.now(),
+    lastUpdatedBy: sessionId
+  });
 }
 
 // Enable writes after user interaction with inventory or characters
@@ -116,32 +85,31 @@ function updateReadOnlyIndicator() {
 
 // Listen for changes from Firebase
 function initFirebaseSync() {
-  // Listen for item changes
-  const itemsRef = ref(database, 'inventory/items');
-  onValue(itemsRef, (snapshot) => {
+  const inventoryRef = ref(database, 'inventory');
+  onValue(inventoryRef, (snapshot) => {
     const data = snapshot.val();
-    if (!data || data.lastUpdatedBy === sessionId) return;
-
-    isSyncing = true;
-    state.items = data.items || [];
-    localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
-    const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
-    document.dispatchEvent(syncEvent);
-    isSyncing = false;
-  });
-
-  // Listen for character changes
-  const charsRef = ref(database, 'inventory/chars');
-  onValue(charsRef, (snapshot) => {
-    const data = snapshot.val();
+    
+    // Ignore null data (first initialization)
     if (!data) return;
-
+    
+    // Skip if this update was triggered by the current session
+    if (data.lastUpdatedBy === sessionId) return;
+    
+    // Flag that we're syncing to prevent loops
     isSyncing = true;
-    const arr = Object.entries(data).map(([id, c]) => ({ ...c, id })).sort((a, b) => (a.order || 0) - (b.order || 0));
-    state.chars = arr;
+    
+    // Update local state
+    state.items = data.items || [];
+    state.chars = data.chars || [];
+    
+    // Also update localStorage for faster loading next time
     localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+    
+    // Trigger UI update events
     const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
     document.dispatchEvent(syncEvent);
+    
+    // Reset syncing flag
     isSyncing = false;
   });
 }
