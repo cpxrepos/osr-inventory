@@ -10,7 +10,7 @@ import {
 
 // Initialize state with defaults
 const state = {
-  items: [],              // loaded from items.json
+  items: {},              // loaded from items.json
   chars: [],
   ui: { 
     leftCollapsed: false, 
@@ -32,6 +32,11 @@ function loadLocalState() {
 // Apply initial state from localStorage if available
 const localState = loadLocalState();
 if (localState) {
+  if (Array.isArray(localState.items)) {
+    const obj = {};
+    localState.items.forEach((it, idx) => { obj[idx] = it; });
+    localState.items = obj;
+  }
   Object.assign(state, localState);
 }
 
@@ -39,17 +44,21 @@ if (localState) {
 let isSyncing = false;
 
 // Save state to local storage and Firebase
-function saveState() {
+function saveState(path = null, value) {
   // Always save to localStorage for quick loading next time
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
-  
+
   // Don't sync to Firebase if we're currently processing a sync from Firebase
   // or if we're in read-only mode and haven't had user interaction yet
   if (isSyncing || state.readOnlyMode) return;
-  
-  // Save to Firebase
+
+  if (path) {
+    set(ref(database, path), value);
+    return;
+  }
+
+  // Save character state
   set(ref(database, 'inventory'), {
-    items: state.items,
     chars: state.chars,
     lastUpdated: Date.now(),
     lastUpdatedBy: sessionId
@@ -99,7 +108,6 @@ function initFirebaseSync() {
     isSyncing = true;
     
     // Update local state
-    state.items = data.items || [];
     state.chars = data.chars || [];
     
     // Also update localStorage for faster loading next time

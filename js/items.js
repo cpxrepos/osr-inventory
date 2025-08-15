@@ -24,8 +24,8 @@ async function loadItemsFromFile() {
       
       if (snapshot.exists() && snapshot.val()) {
         // We have items in Firebase, use those
-        state.items = Object.values(snapshot.val());
-        console.log("Loaded items from Firebase:", state.items.length);
+        state.items = snapshot.val() || {};
+        console.log("Loaded items from Firebase:", Object.keys(state.items).length);
       } else {
         // No items in Firebase yet, load from local file and push to Firebase
         console.log("No items in Firebase, initializing from local file");
@@ -39,7 +39,7 @@ async function loadItemsFromFile() {
   } catch(err) {
     // All loading attempts failed
     console.error("All item loading attempts failed:", err);
-    state.items = []; // empty if not available
+    state.items = {}; // empty if not available
     saveState();
   }
   
@@ -55,40 +55,34 @@ async function initializeItemsFromLocalFile() {
     
     const data = await res.json();
     if (!Array.isArray(data)) throw new Error("items.json must be an array");
-    
-// Normalize: ensure each item has {name, slots?, notes?, hasSubSlots?, maxSubSlots?, subSlotName?, hasCoinSlots?, coinTypes?}
-    state.items = data.map(it => ({
-      name: String(it.name || '').trim(),
-      slots: Math.max(1, Number(it.slots || 1)),
-      notes: typeof it.notes === 'string' ? it.notes : '',
-      hasSubSlots: it.hasSubSlots || false,
-      maxSubSlots: it.hasSubSlots ? Math.min(3, Math.max(1, Number(it.maxSubSlots || 1))) : 0,
-      subSlotName: it.hasSubSlots ? String(it.subSlotName || 'unit') : '',
-      hasCoinSlots: it.hasCoinSlots || false,
-      coinTypes: it.hasCoinSlots ? (Array.isArray(it.coinTypes) ? it.coinTypes : ["PP", "GP", "SP", "CP", "EP", "Gems"]) : []
-    })).filter(it => it.name.length > 0);
-    
-    // Try to save to Firebase for future use
-    try {
-      const itemsRef = ref(database, 'items');
-      const itemsObject = {};
-      
-      state.items.forEach((item, index) => {
-        itemsObject[index] = item;
-      });
-      
-      await set(itemsRef, itemsObject);
-      console.log("Initialized items in Firebase");
-    } catch(fbErr) {
-      // If Firebase save fails, continue with local items
-      console.warn("Could not save items to Firebase:", fbErr);
-      console.log("Using items from local file only");
+
+    // Normalize
+    state.items = {};
+    for (const it of data) {
+      const item = {
+        name: String(it.name || '').trim(),
+        slots: Math.max(1, Number(it.slots || 1)),
+        notes: typeof it.notes === 'string' ? it.notes : '',
+        hasSubSlots: it.hasSubSlots || false,
+        maxSubSlots: it.hasSubSlots ? Math.min(3, Math.max(1, Number(it.maxSubSlots || 1))) : 0,
+        subSlotName: it.hasSubSlots ? String(it.subSlotName || 'unit') : '',
+        hasCoinSlots: it.hasCoinSlots || false,
+        coinTypes: it.hasCoinSlots ? (Array.isArray(it.coinTypes) ? it.coinTypes : ["PP", "GP", "SP", "CP", "EP", "Gems"]) : []
+      };
+      if (!item.name) continue;
+      try {
+        const newRef = push(ref(database, 'items'));
+        state.items[newRef.key] = item;
+        await set(newRef, item);
+      } catch (fbErr) {
+        console.warn("Could not save item to Firebase:", fbErr);
+      }
     }
-    
+
     saveState();
   } catch(err) {
     console.warn("Failed to load items from local file:", err);
-    state.items = [];
+    state.items = {};
     saveState();
   }
 }
@@ -109,32 +103,23 @@ function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, 
   
   // Create the new item
   const newItem = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
-  
-  // Add to local state
-  state.items.push(newItem);
-  
-  try {
-    // Try to add to Firebase
-    const itemsRef = ref(database, 'items');
-    const newItemRef = push(itemsRef);
-    set(newItemRef, newItem).catch(err => {
-      console.warn("Failed to save item to Firebase:", err);
-      // Item is still in local state, so it will work for this session
-    });
-  } catch(err) {
-    console.warn("Error accessing Firebase:", err);
-    // Continue with local state only
-  }
-  
+
+  // Generate unique ID and add to local state
+  const newRef = push(ref(database, 'items'));
+  const id = newRef.key;
+  state.items[id] = newItem;
+
+  // Persist only this item
+  saveState(`items/${id}`, newItem);
+
   // Update UI
-  saveState();
   renderItems();
-  
+
   return true;
 }
 
 // Edit an existing item
-function editItem(index, name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
+function editItem(id, name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
   enableWrites(); // Ensure we can write to Firebase
   
   // Validate input
@@ -145,69 +130,35 @@ function editItem(index, name, slots, notes = "", hasSubSlots = false, maxSubSlo
   maxSubSlots = hasSubSlots ? Math.min(3, Math.max(1, Number(maxSubSlots || 1))) : 0;
   subSlotName = hasSubSlots ? String(subSlotName || 'unit').trim() : '';
   
-  if (!name || index < 0 || index >= state.items.length) return false;
-  
+  if (!name || !state.items[id]) return false;
+
   // Update the item
-  state.items[index] = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
-  
-  try {
-    // Try to update in Firebase
-    const itemsRef = ref(database, 'items');
-    
-    // Update Firebase - need to update the whole items object
-    const itemsObject = {};
-    state.items.forEach((item, idx) => {
-      itemsObject[idx] = item;
-    });
-    
-    set(itemsRef, itemsObject).catch(err => {
-      console.warn("Failed to update item in Firebase:", err);
-      // Item is still updated in local state
-    });
-  } catch(err) {
-    console.warn("Error accessing Firebase:", err);
-    // Continue with local state only
-  }
-  
+  state.items[id] = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
+
+  // Persist only this item
+  saveState(`items/${id}`, state.items[id]);
+
   // Update UI
-  saveState();
   renderItems();
-  
+
   return true;
 }
 
 // Delete an item from the database
-function deleteItem(index) {
+function deleteItem(id) {
   enableWrites(); // Ensure we can write to Firebase
   
-  if (index < 0 || index >= state.items.length) return false;
-  
+  if (!state.items[id]) return false;
+
   // Remove from local state
-  state.items.splice(index, 1);
-  
-  try {
-    // Try to update in Firebase
-    const itemsRef = ref(database, 'items');
-    
-    // Update Firebase - need to update the whole items object
-    const itemsObject = {};
-    state.items.forEach((item, idx) => {
-      itemsObject[idx] = item;
-    });
-    
-    set(itemsRef, itemsObject).catch(err => {
-      console.warn("Failed to update items in Firebase after delete:", err);
-      // Item is still deleted in local state
-    });
-  } catch(err) {
-    console.warn("Error accessing Firebase:", err);
-    // Continue with local state only
-  }
-  
+  delete state.items[id];
+
+  // Persist removal
+  saveState(`items/${id}`, null);
+
   // Update UI
-  saveState();
   renderItems();
-  
+
   return true;
 }
 
@@ -303,7 +254,7 @@ function renderItems() {
   editFormContainer.className = "create-item-form hidden"; // reuse create-item-form class
   editFormContainer.innerHTML = `
     <div class="form-grid">
-      <input type="hidden" id="editItemIndex" />
+      <input type="hidden" id="editItemId" />
       <div>
         <label for="editItemName">Item Name</label>
         <input id="editItemName" placeholder="Item Name" />
@@ -338,7 +289,7 @@ function renderItems() {
   
   // Add event listeners to the edit form buttons
   $("#updateItemBtn")?.addEventListener("click", () => {
-    const index = parseInt($("#editItemIndex")?.value || "-1");
+    const id = $("#editItemId")?.value || "";
     const name = $("#editItemName")?.value || "";
     const slots = $("#editItemSlots")?.value || 1;
     const notes = $("#editItemNotes")?.value || "";
@@ -346,7 +297,7 @@ function renderItems() {
     const maxSubSlots = $("#editItemMaxSubSlots")?.value || 3;
     const subSlotName = $("#editItemSubSlotName")?.value || "unit";
     
-    if (editItem(index, name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
+    if (editItem(id, name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
       // Success, hide the form
       toggleEditItemForm();
     } else {
@@ -365,8 +316,8 @@ function renderItems() {
   
   $("#cancelEditBtn")?.addEventListener("click", toggleEditItemForm);
 
-  const items = state.items.filter(i => !q || i.name.toLowerCase().includes(q));
-  if (items.length === 0) {
+  const entries = Object.entries(state.items).filter(([id, i]) => !q || i.name.toLowerCase().includes(q));
+  if (entries.length === 0) {
     const div = document.createElement("div");
     div.className = "muted";
     div.textContent = "No items found. Use the 'Create Item' button to add new items.";
@@ -374,7 +325,7 @@ function renderItems() {
     return;
   }
 
-  items.forEach((it, displayIndex) => {
+  entries.forEach(([id, it]) => {
     const div = document.createElement("div");
     div.className = "item";
     div.draggable = true;
@@ -404,7 +355,7 @@ function renderItems() {
     editBtn.title = "Edit Item";
     editBtn.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent drag
-      showEditItemForm(state.items.findIndex(x => x === it));
+      showEditItemForm(id);
     });
     actionDiv.appendChild(editBtn);
     
@@ -416,7 +367,7 @@ function renderItems() {
     deleteBtn.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent drag
       if (confirm(`Are you sure you want to delete "${it.name}"?`)) {
-        deleteItem(state.items.findIndex(x => x === it));
+        deleteItem(id);
       }
     });
     actionDiv.appendChild(deleteBtn);
@@ -425,8 +376,7 @@ function renderItems() {
     
     div.addEventListener("dragstart", e => {
       // Use object reference lookup to get original index reliably
-      const originalIdx = state.items.findIndex(x => x === it);
-      e.dataTransfer.setData("text/plain", JSON.stringify({ type:"lib", idx: originalIdx }));
+      e.dataTransfer.setData("text/plain", JSON.stringify({ type:"lib", id }));
     });
     
     list.appendChild(div);
@@ -474,13 +424,13 @@ function toggleCreateItemForm() {
 }
 
 // Show/hide the edit item form
-function showEditItemForm(index) {
+function showEditItemForm(id) {
   // Get the item
-  const item = state.items[index];
+  const item = state.items[id];
   if (!item) return;
-  
+
   // Fill the form with item data
-  $("#editItemIndex").value = index;
+  $("#editItemId").value = id;
   $("#editItemName").value = item.name;
   $("#editItemSlots").value = item.slots;
   $("#editItemNotes").value = item.notes || "";
