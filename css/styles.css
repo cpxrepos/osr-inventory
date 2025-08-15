@@ -229,6 +229,8 @@ section{ background:var(--panel); border:1px solid #202636; border-radius:var(--
   overflow-x:auto;
 }
 .char{ border:1px solid #23293a; border-radius:12px; background:#121723; min-height:200px; }
+.char.read-only{ opacity:0.6; }
+.char.selected{ border-color: var(--accent); }
 .char-header{ display:flex; gap:12px; align-items:baseline; padding:12px; border-bottom:1px solid #1f2536; }
 .char-name{ font-size:16px; font-weight:700; }
 .char-meta{ margin-left:auto; display:flex; gap:10px; font-size:12px; color:#8b93a7; flex-wrap:wrap; }
