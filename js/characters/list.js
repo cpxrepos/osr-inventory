@@ -1,7 +1,6 @@
 import { state, saveState, enableWrites } from '../state.js';
 import { $, slotsFromSTR } from '../helpers.js';
 import { renderChars } from './render.js';
-import { database, ref, set } from '../firebase-config.js';
 
 function renderCharList() {
   const list = $("#charList"); 
@@ -27,8 +26,7 @@ function renderCharList() {
     
     // Add hidden class if character is hidden
     const isHidden = state.ui.hiddenChars.includes(i);
-    const isSelected = state.ui.selectedChar === i;
-    row.className = `char-row${isHidden ? ' hidden' : ''}${isSelected ? ' selected' : ''}`;
+    row.className = `char-row${isHidden ? ' hidden' : ''}`;
     
     // Add draggable attribute to enable drag functionality
     row.draggable = true;
@@ -74,19 +72,15 @@ function renderCharList() {
       
       if (fromIndex !== toIndex && !isNaN(fromIndex) && fromIndex >= 0 && fromIndex < state.chars.length) {
         enableWrites(); // Enable writes on character reordering
-        const selectedId = state.chars[state.ui.selectedChar]?.id;
         // Reorder the characters array
         const [movedChar] = state.chars.splice(fromIndex, 1);
         state.chars.splice(toIndex, 0, movedChar);
-        state.chars.forEach((char, idx) => {
-          if (char.id === selectedId) state.ui.selectedChar = idx;
-          saveState(idx);
-        });
+        saveState();
         renderChars();
         renderCharList();
       }
     });
-
+    
     row.querySelectorAll("button").forEach(button => {
       button.addEventListener("click", (e) => {
         const idx = Number(e.currentTarget.dataset.index);
@@ -96,20 +90,12 @@ function renderCharList() {
         if (action === "delete") {
           if (confirm(`Delete ${state.chars[idx].name}?`)) {
             enableWrites();
-            const [removed] = state.chars.splice(idx, 1);
-            if (removed && removed.id) {
-              set(ref(database, `inventory/chars/${removed.id}`), null);
-            }
-            if (state.ui.selectedChar === idx) {
-              state.ui.selectedChar = null;
-            } else if (state.ui.selectedChar > idx) {
-              state.ui.selectedChar--;
-            }
-            state.chars.forEach((_, i2) => saveState(i2));
-            renderChars();
+            state.chars.splice(idx, 1); 
+            saveState(); 
+            renderChars(); 
             renderCharList();
           }
-        }
+        } 
         else if (action === "toggle-visibility") {
           enableWrites();
           const hiddenIndex = state.ui.hiddenChars.indexOf(idx);
@@ -121,18 +107,10 @@ function renderCharList() {
             state.ui.hiddenChars.push(idx);
           }
           saveState();
-          renderChars();
+          renderChars(); 
           renderCharList();
         }
       });
-    });
-
-    // Select character on row click (excluding button clicks)
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      state.ui.selectedChar = i;
-      renderChars();
-      renderCharList();
     });
     list.appendChild(row);
   });

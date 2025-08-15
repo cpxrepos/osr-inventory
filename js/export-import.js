@@ -40,7 +40,6 @@ function importData() {
         // Replace current inventory and character data with imported data
         state.chars = obj.chars;
         state.items = obj.items;
-        state.chars.forEach((_, idx) => saveState(idx));
         saveState();
         
         // Update all UI components
