@@ -35,11 +35,16 @@ function importData() {
     fr.onload = () => {
       try {
         const obj = JSON.parse(fr.result);
-        if (!obj || typeof obj !== "object" || !Array.isArray(obj.items) || !Array.isArray(obj.chars)) throw 0;
-        
+        if (!obj || typeof obj !== "object" || typeof obj.items !== 'object' || !Array.isArray(obj.chars)) throw 0;
+
         // Replace current inventory and character data with imported data
         state.chars = obj.chars;
-        state.items = obj.items;
+        state.items = obj.items || {};
+
+        // Persist items individually
+        for (const [id, item] of Object.entries(state.items)) {
+          saveState(`items/${id}`, item);
+        }
         saveState();
         
         // Update all UI components

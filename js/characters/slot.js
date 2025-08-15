@@ -225,7 +225,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     const targetSection = section; // equipped or backpack
 
     if (payload.type === "lib") {
-      const src = state.items[payload.idx]; 
+      const src = state.items[payload.id];
       if (!src) return;
       enableWrites(); // Enable writes on item drop
       const targetArray = state.chars[tci][targetSection];
