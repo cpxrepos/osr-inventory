@@ -1,6 +1,15 @@
 /* ===== Helpers & Rules ===== */
 const $ = s => document.querySelector(s);
 
+// Simple debounce utility to limit how often a function runs
+function debounce(fn, delay = 300) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
 function slotsFromSTR(str){
   const s = Math.floor(Number(str) || 0);
   if (s >= 18) return 19;
@@ -200,6 +209,7 @@ function moveMulti(fromChar, headIndex, toChar, toStart, len, fromCharSlots, toC
 
 export {
   $,
+  debounce,
   slotsFromSTR,
   speedFactorFromEmpty,
   fmtSpeed,
