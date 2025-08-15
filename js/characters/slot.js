@@ -304,7 +304,6 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       }));
     });
   }
-
   // Edit / Remove
   if (isHead && isSelectedChar) {
     slot.addEventListener("dblclick", () => {
@@ -535,7 +534,6 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       });
     }
   }
-  
   if (isSelectedChar) {
     slot.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
