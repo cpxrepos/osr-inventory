@@ -16,7 +16,8 @@ const state = {
     leftCollapsed: false,
     rightCollapsed: false,
     hiddenChars: [],       // Track which characters are hidden
-    selectedChar: null     // Currently selected character index
+    selectedChar: null,    // Currently selected character index
+    expandedCoinPurses: {} // Track expanded coin purses locally
   },
   readOnlyMode: true      // Start in read-only mode by default
 };
@@ -34,6 +35,10 @@ function loadLocalState() {
 const localState = loadLocalState();
 if (localState) {
   Object.assign(state, localState);
+}
+// Ensure expandedCoinPurses exists after loading
+if (!state.ui.expandedCoinPurses) {
+  state.ui.expandedCoinPurses = {};
 }
 
 // Flag to prevent sync loops
@@ -65,11 +70,25 @@ function saveState(charIndex) {
     get(charRef).then((snap) => {
       const data = snap.val();
       if (data && data.lastUpdated && data.lastUpdated !== c.lastUpdated) {
-        alert(`${c.name} has newer data on the server. Please reload before saving.`);
+        console.warn(`${c.name} has newer data on the server. Please reload before saving.`);
         return;
       }
+      // Create a sanitized copy without local UI-only properties
+      const sanitized = JSON.parse(JSON.stringify(c));
+      ['equipped', 'backpack', 'largeSack', 'smallSack'].forEach(sec => {
+        if (Array.isArray(sanitized[sec])) {
+          sanitized[sec] = sanitized[sec].map(slot => {
+            if (slot && typeof slot === 'object') {
+              const { expanded, ...rest } = slot;
+              return rest;
+            }
+            return slot;
+          });
+        }
+      });
+
       const payload = {
-        ...c,
+        ...sanitized,
         order: charIndex,
         lastUpdated: Date.now(),
         lastUpdatedBy: sessionId
