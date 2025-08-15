@@ -255,7 +255,20 @@ section{ background:var(--panel); border:1px solid #202636; border-radius:var(--
   min-width: 20px;
   min-height: 20px;
 }
+
 .slots{ flex:1; display:flex; flex-direction:column; gap:3px; min-width:220px; }
+
+.notes-textarea{
+  width:100%;
+  min-height:60px;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #2a3042;
+  background:#0f1421;
+  color:#e7e9ee;
+  resize:vertical;
+}
+
 .slot{
   display:flex; align-items:center; justify-content:space-between; gap:6px;
   padding:4px 8px; min-height:24px; background:var(--slot); border:1px dashed #2a3042;

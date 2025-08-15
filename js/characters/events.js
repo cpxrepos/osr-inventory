@@ -12,7 +12,7 @@ function initCharacterEvents() {
     const nSlots = slotsFromSTR(str);
     const equipped = Array(9).fill(null);
     const backpack = Array.from({length: nSlots}, () => null);
-    state.chars.push({ name, str, equipped, backpack });
+    state.chars.push({ name, str, equipped, backpack, notes: "" });
     saveState();
     renderChars();
     renderCharList();
