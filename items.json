@@ -1,5 +1,5 @@
 [
-  { "name": "Coin Purse", "slots": 1, "notes": "Holds up to 100 coins of each type", "hasCoinSlots": true, "coinTypes": ["PP", "GP", "SP", "CP", "EP", "Gems"] },
+  { "name": "Coin Purse", "slots": 1, "notes": "Holds up to 100 coins of each type", "hasCoinSlots": true, "coinTypes": ["GP", "SP", "CP", "EP", "Gems"] },
   { "name": "Custome 1", "slots": 1, "notes": "custom item" },
   { "name": "Custome 2", "slots": 2, "notes": "custom item" },
   { "name": "Backpack", "slots": 1, "notes": "storage; can be worn on back" },
