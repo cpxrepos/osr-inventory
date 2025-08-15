@@ -359,14 +359,19 @@ function renderChars() {
     notesArea.className = "notes-textarea";
     notesArea.placeholder = "Add notes...";
     notesArea.value = c.notes;
-    // Debounce note saving to avoid excessive state writes while typing
+    // Update local state immediately and only persist the current notes field
+
     const debouncedSaveNotes = debounce(() => {
       enableWrites();
-      c.notes = notesArea.value;
-      saveState();
+      saveState(`inventory/chars/${ci}/notes`, c.notes);
     }, 400);
 
-    notesArea.addEventListener("input", debouncedSaveNotes);
+    notesArea.addEventListener("input", () => {
+      c.notes = notesArea.value;
+
+      debouncedSaveNotes();
+    });
+
 
     notesSection.appendChild(notesArea);
     inv.appendChild(notesSection);
