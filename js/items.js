@@ -65,7 +65,7 @@ async function initializeItemsFromLocalFile() {
       maxSubSlots: it.hasSubSlots ? Math.min(3, Math.max(1, Number(it.maxSubSlots || 1))) : 0,
       subSlotName: it.hasSubSlots ? String(it.subSlotName || 'unit') : '',
       hasCoinSlots: it.hasCoinSlots || false,
-      coinTypes: it.hasCoinSlots ? (Array.isArray(it.coinTypes) ? it.coinTypes : ["PP", "GP", "SP", "CP", "EP", "Gems"]) : []
+      coinTypes: it.hasCoinSlots ? (Array.isArray(it.coinTypes) ? it.coinTypes : ["GP", "SP", "CP", "EP", "Gems"]) : []
     })).filter(it => it.name.length > 0);
     
     // Try to save to Firebase for future use

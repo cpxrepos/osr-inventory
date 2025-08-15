@@ -72,7 +72,7 @@ function tryPlaceMulti(charIdx, start, name, needed, charSlots, section, source 
     // Copy coin slot properties if this is a coin purse
     if (source.hasCoinSlots) {
       newItem.hasCoinSlots = true;
-      newItem.coinTypes = source.coinTypes || ["PP", "GP", "SP", "CP", "EP", "Gems"];
+      newItem.coinTypes = source.coinTypes || ["GP", "SP", "CP", "EP", "Gems"];
       newItem.coinAmounts = source.coinAmounts ? {...source.coinAmounts} : {};
     }
   }
@@ -173,7 +173,7 @@ function moveMulti(fromChar, headIndex, toChar, toStart, len, fromCharSlots, toC
     
     // Copy coin slot properties if they exist
     const hasCoinSlots = sourceItem.hasCoinSlots || false;
-    const coinTypes = sourceItem.coinTypes || ["PP", "GP", "SP", "CP", "EP", "Gems"];
+    const coinTypes = sourceItem.coinTypes || ["GP", "SP", "CP", "EP", "Gems"];
     const coinAmounts = sourceItem.coinAmounts || {};
     
     if (hasCoinSlots) {
