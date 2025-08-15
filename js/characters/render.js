@@ -13,7 +13,7 @@ import { renderCharList } from './list.js';
 
 // Render characters in the center panel
 function renderChars() {
-  const wrap = $("#chars"); 
+  const wrap = $("#chars");
   if (!wrap) return;
   wrap.innerHTML = "";
 
@@ -22,16 +22,21 @@ function renderChars() {
     state.ui.hiddenChars = [];
   }
 
-  state.chars.forEach((c, ci) => {
-    // Skip rendering if character is hidden
-    if (state.ui.hiddenChars.includes(ci)) {
-      return;
-    }
-    // Initialize the equipped and backpack arrays if they don't exist
-    if (!c.equipped || !Array.isArray(c.equipped)) {
-      c.equipped = Array(9).fill(null);
-    }
-    
+  const ci = state.ui.selectedChar;
+  const c = state.chars[ci];
+  if (ci === null || c === undefined || state.ui.hiddenChars.includes(ci)) {
+    const p = document.createElement("div");
+    p.className = "small";
+    p.textContent = "Select a character from the list to view.";
+    wrap.appendChild(p);
+    return;
+  }
+
+  // Initialize the equipped and backpack arrays if they don't exist
+  if (!c.equipped || !Array.isArray(c.equipped)) {
+    c.equipped = Array(9).fill(null);
+  }
+
     const backpackSlots = slotsFromSTR(c.str);
     if (!c.backpack || !Array.isArray(c.backpack)) {
       // If migrating from old format, transfer items to backpack
@@ -47,8 +52,8 @@ function renderChars() {
     if (c.backpack.length !== backpackSlots) {
       const old = c.backpack.slice(0, backpackSlots);
       while (old.length < backpackSlots) old.push(null);
-      c.backpack = old; 
-      saveState();
+      c.backpack = old;
+      saveState(ci);
     }
 
     // FIXED: Ensure equipped array is ALWAYS exactly 9 slots regardless of STR
@@ -58,7 +63,7 @@ function renderChars() {
       const old = c.equipped.slice(0, Math.min(c.equipped.length, 9));
       while (old.length < 9) old.push(null);
       c.equipped = old;
-      saveState();
+      saveState(ci);
     }
     
     // Check for sacks in equipped section
@@ -91,14 +96,14 @@ function renderChars() {
       const old = c.largeSack.slice(0, backpackSlots);
       while (old.length < backpackSlots) old.push(null);
       c.largeSack = old;
-      saveState();
+      saveState(ci);
     }
     
     if (hasSmallSack && c.smallSack.length !== 9) {
       const old = c.smallSack.slice(0, 9);
       while (old.length < 9) old.push(null);
       c.smallSack = old;
-      saveState();
+      saveState(ci);
     }
 
     // Count occupied slots in backpack and large sack (if equipped)
@@ -358,14 +363,13 @@ function renderChars() {
           state.ui.smallSackCollapsed[charIndex] = !state.ui.smallSackCollapsed[charIndex];
         }
         
-        saveState();
+        saveState(ci);
         renderChars();
       });
     });
     
     charEl.appendChild(inv);
   wrap.appendChild(charEl);
-  });
 }
 
 export { renderChars };

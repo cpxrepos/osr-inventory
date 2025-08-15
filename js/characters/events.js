@@ -13,7 +13,9 @@ function initCharacterEvents() {
     const equipped = Array(9).fill(null);
     const backpack = Array.from({length: nSlots}, () => null);
     state.chars.push({ name, str, equipped, backpack });
-    saveState();
+    const idx = state.chars.length - 1;
+    state.ui.selectedChar = idx;
+    saveState(idx);
     renderChars();
     renderCharList();
     $("#name").value = "";
