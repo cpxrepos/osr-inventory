@@ -132,7 +132,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         (slotObj.coinTypes || ["PP", "GP", "SP", "CP", "EP", "Gems"]).forEach(type => {
           slotObj.coinAmounts[type] = 0;
         });
-
+        
         // If the name contains a coin amount like "32gp", set the initial amount
         if (slotObj.name && slotObj.name.toLowerCase().includes('coin')) {
           const match = slotObj.name.match(/(\d+)([a-z]+)/i);
@@ -147,11 +147,12 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         }
         saveState(ci);
       }
-
-      const charId = state.chars[ci]?.id || ci;
-      const purseKey = `${charId}-${section}-${si}`;
-      const expanded = !!state.ui.expandedCoinPurses[purseKey];
-
+      
+      // Initialize expanded state if it doesn't exist
+      if (slotObj.expanded === undefined) {
+        slotObj.expanded = false;
+      }
+      
       // Calculate total coins and value
       let totalCoins = 0;
       let totalValue = 0;
@@ -207,10 +208,10 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       // Add collapsed summary or expanded coin inputs - use CSS classes instead of inline styles
       slotContent += `
-        <div class="coin-summary ${expanded ? 'hidden' : ''}">
+        <div class="coin-summary ${slotObj.expanded ? 'hidden' : ''}">
           <span>${totalCoins}/100 coins (${formattedValue})</span>
         </div>
-        <div class="coin-slots-container ${expanded ? '' : 'hidden'}">
+        <div class="coin-slots-container ${slotObj.expanded ? '' : 'hidden'}">
       `;
       
       // Create inputs for each coin type
@@ -341,15 +342,150 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     }
     // Toggle expanded state when clicking on the slot
     slot.addEventListener('click', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' ||
-          e.target.closest('.btn') || e.target.closest('.slot-actions')) {
+      // Enhanced debugging
+      console.log('Coin purse clicked', e.target.tagName, e.target.className);
+      console.log('Current expanded state:', slotObj.expanded);
+      
+      // Don't toggle if clicking on inputs or buttons
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+        console.log('Ignoring click on input/button');
         return;
       }
-      enableWrites();
-      state.ui.expandedCoinPurses[purseKey] = !state.ui.expandedCoinPurses[purseKey];
-      renderChars();
+      
+      // Ensure we're not clicking on a button within the slot
+      if (e.target.closest('.btn') || e.target.closest('.slot-actions')) {
+        console.log('Ignoring click on button or slot action');
+        return;
+      }
+      
+      // Check if we're clicking on any interactive elements that should be excluded
+      const isOnInteractiveElement = 
+        e.target.tagName === 'INPUT' || 
+        e.target.tagName === 'BUTTON' || 
+        e.target.closest('.btn') !== null || 
+        e.target.closest('.slot-actions') !== null;
+      
+      // If not on an interactive element, allow the click to toggle expansion
+      if (!isOnInteractiveElement) {
+        console.log('Toggling coin purse expanded state');
+        enableWrites();
+        // Toggle expanded state but don't re-render
+        slotObj.expanded = !slotObj.expanded;
+        console.log('New expanded state:', slotObj.expanded);
+        
+        // Create the expanded coin management view directly
+        // This bypasses issues with the CSS hidden class and render cycles
+        if (slotObj.expanded) {
+          // Create the coin management interface directly
+          slot.innerHTML = '';
+          
+          // Create container div
+          const container = document.createElement('div');
+          container.style.padding = '8px';
+          
+          // Create header with item name
+          const header = document.createElement('div');
+          header.innerHTML = `<span class="item-tag">${slotObj.name}</span>`;
+          container.appendChild(header);
+          
+          // Create coin input fields
+          const coinContainer = document.createElement('div');
+          coinContainer.style.backgroundColor = '#0f1421';
+          coinContainer.style.padding = '10px';
+          coinContainer.style.borderRadius = '6px';
+          coinContainer.style.marginTop = '8px';
+          coinContainer.style.border = '1px solid #2a3042';
+          
+          // Add each coin type
+          (slotObj.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"]).forEach(coinType => {
+            const amount = slotObj.coinAmounts[coinType] || 0;
+            const coinColor = getCoinColor(coinType);
+            
+            // Create row
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.marginBottom = '6px';
+            row.style.gap = '8px';
+            
+            // Create coin icon
+            const coinIcon = document.createElement('span');
+            coinIcon.className = 'coin-icon';
+            coinIcon.style.backgroundColor = coinColor;
+            coinIcon.textContent = coinType;
+            
+            // Create input
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'coin-amount';
+            input.value = amount;
+            input.min = 0;
+            input.dataset.coinType = coinType;
+            
+            // Prevent arrow keys from changing the value
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+              }
+            });
+            
+            // Add event listener for input
+            input.addEventListener('change', (e) => {
+              enableWrites();
+              slotObj.coinAmounts[coinType] = parseInt(e.target.value) || 0;
+              saveState(ci);
+            });
+            
+            // Add elements to row
+            row.appendChild(coinIcon);
+            row.appendChild(input);
+            row.appendChild(document.createTextNode('/100'));
+            
+            // Add row to container
+            coinContainer.appendChild(row);
+          });
+          
+          // Add a button to close the expanded view
+          const closeBtn = document.createElement('button');
+          closeBtn.className = 'btn';
+          closeBtn.style.marginTop = '8px';
+          closeBtn.style.width = '100%';
+          closeBtn.textContent = 'Close';
+          closeBtn.addEventListener('click', () => {
+            slotObj.expanded = false;
+            saveState(ci);
+            renderChars(); // Re-render to show closed state
+          });
+          
+          // Assemble the UI
+          container.appendChild(coinContainer);
+          container.appendChild(closeBtn);
+          
+          // Add standard slot actions
+          const actions = document.createElement('span');
+          actions.className = 'slot-actions';
+          actions.innerHTML = `
+            <button class="btn" data-action="edit">Edit</button>
+            <button class="btn danger" data-action="remove">Remove</button>
+          `;
+          
+          // Add everything to the slot
+          slot.appendChild(container);
+          slot.appendChild(actions);
+          slot.style.border = '2px solid #69a9ff';
+          
+          // Save state but don't re-render
+          saveState(ci);
+        } else {
+          // Let the regular render cycle handle collapsing
+          saveState(ci);
+          renderChars();
+        }
+      } else {
+        console.log('Click not on valid coin purse element');
+      }
     });
-
+    
     // Add event listeners to prevent arrow keys on coin inputs
     slot.querySelectorAll('.coin-amount').forEach(input => {
       // Prevent up/down arrow keys from changing the value
@@ -384,12 +520,14 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         renderChars(); // Re-render to update coin limits
       });
     });
-
+    
     // Close expanded coin purse when clicking outside
-    if (expanded) {
+    if (slotObj.expanded) {
       document.addEventListener('click', function closeExpandedCoinPurse(e) {
+        // If click is outside the current slot
         if (!slot.contains(e.target)) {
-          state.ui.expandedCoinPurses[purseKey] = false;
+          slotObj.expanded = false;
+          saveState(ci);
           renderChars();
           document.removeEventListener('click', closeExpandedCoinPurse);
         }
