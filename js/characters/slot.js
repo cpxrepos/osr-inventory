@@ -61,7 +61,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       enableWrites(); // Enable writes on item edit
       // Create a new single-slot item with "New Item" name
       slotsArray[si] = { name: "New Item", slots: 1, head: true };
-      saveState();
+      saveState(ci);
       renderChars();
       renderCharList();
       
@@ -85,7 +85,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     // Initialize filledSubSlots if it doesn't exist
     if (hasSubSlots && slotObj.filledSubSlots === undefined) {
       slotObj.filledSubSlots = maxSubSlots; // Start with all sub-slots filled
-      saveState();
+      saveState(ci);
     }
     
     let slotContent = `
@@ -142,7 +142,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             }
           }
         }
-        saveState();
+        saveState(ci);
       }
       
       // Initialize expanded state if it doesn't exist
@@ -270,7 +270,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       enableWrites(); // Enable writes on item drop
       const targetArray = state.chars[tci][targetSection];
       tryPlaceMulti(tci, tsi, src.name, Math.max(1, Number(src.slots || 1)), targetArray, targetSection, src);
-      saveState(); 
+      saveState(ci);
       renderChars(); 
       renderCharList();
     }
@@ -281,7 +281,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       const sourceArray = state.chars[fromChar][sourceSection];
       const targetArray = state.chars[tci][targetSection];
       moveMulti(fromChar, headIndex, tci, tsi, length, sourceArray, targetArray, sourceSection, targetSection);
-      saveState(); 
+      saveState(ci);
       renderChars(); 
       renderCharList();
     }
@@ -311,7 +311,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     slotsArray[si] = { name, slots: cur.slots, head: true };
     for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
     
-    saveState(); 
+    saveState(ci);
     renderChars(); 
     renderCharList();
   });
@@ -334,7 +334,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           slotObj.coinAmounts[type] = 0;
         });
       }
-      saveState();
+      saveState(ci);
     }
     // Toggle expanded state when clicking on the slot
     slot.addEventListener('click', (e) => {
@@ -429,7 +429,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             input.addEventListener('change', (e) => {
               enableWrites();
               slotObj.coinAmounts[coinType] = parseInt(e.target.value) || 0;
-              saveState();
+              saveState(ci);
             });
             
             // Add elements to row
@@ -449,7 +449,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           closeBtn.textContent = 'Close';
           closeBtn.addEventListener('click', () => {
             slotObj.expanded = false;
-            saveState();
+            saveState(ci);
             renderChars(); // Re-render to show closed state
           });
           
@@ -471,10 +471,10 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           slot.style.border = '2px solid #69a9ff';
           
           // Save state but don't re-render
-          saveState();
+          saveState(ci);
         } else {
           // Let the regular render cycle handle collapsing
-          saveState();
+          saveState(ci);
           renderChars();
         }
       } else {
@@ -512,7 +512,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         // Update the coin amount in the state
         slotObj.coinAmounts = slotObj.coinAmounts || {};
         slotObj.coinAmounts[coinType] = value;
-        saveState();
+        saveState(ci);
         renderChars(); // Re-render to update coin limits
       });
     });
@@ -523,7 +523,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         // If click is outside the current slot
         if (!slot.contains(e.target)) {
           slotObj.expanded = false;
-          saveState();
+          saveState(ci);
           renderChars();
           document.removeEventListener('click', closeExpandedCoinPurse);
         }
@@ -558,7 +558,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       }
       
       removeMulti(ci, headIdx, slotsArray, section);
-      saveState(); 
+      saveState(ci);
       renderChars(); 
       renderCharList();
     } else if (btn.dataset.action === "edit") {
@@ -593,7 +593,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
       
-      saveState(); 
+      saveState(ci);
       renderChars(); 
       renderCharList();
     } 
@@ -612,7 +612,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           }
         }
         
-        saveState();
+        saveState(ci);
         renderChars();
         renderCharList();
       }
@@ -624,7 +624,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       if (cur.hasSubSlots && cur.filledSubSlots < cur.maxSubSlots) {
         cur.filledSubSlots++;
-        saveState();
+        saveState(ci);
         renderChars();
         renderCharList();
       }

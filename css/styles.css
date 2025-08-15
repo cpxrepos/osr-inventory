@@ -179,6 +179,10 @@ section{ background:var(--panel); border:1px solid #202636; border-radius:var(--
   border: 1px dashed #23293a;
   opacity: 0.7;
 }
+.char-row.selected {
+  border-color: var(--accent);
+  background: #192135;
+}
 .char-row .action-buttons {
   display: flex;
   gap: 4px;
