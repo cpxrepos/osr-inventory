@@ -1,5 +1,5 @@
 /* ===== Characters Management ===== */
-import { state, saveState } from '../state.js';
+import { state, saveState, enableWrites } from '../state.js';
 import {
   $,
   slotsFromSTR,
@@ -61,6 +61,12 @@ function renderChars() {
       saveState();
     }
     
+    // Initialize notes field if missing
+    if (typeof c.notes !== "string") {
+      c.notes = "";
+      saveState();
+    }
+
     // Check for sacks in equipped section
     let hasSmallSack = false;
     let hasLargeSack = false;
@@ -339,6 +345,28 @@ function renderChars() {
       inv.appendChild(smallSackSection);
     }
     
+    // Notes section
+    const notesSection = document.createElement("div");
+    notesSection.className = "inventory-section";
+
+    const notesTitle = document.createElement("div");
+    notesTitle.className = "section-title";
+    notesTitle.textContent = "Notes";
+    notesSection.appendChild(notesTitle);
+
+    const notesArea = document.createElement("textarea");
+    notesArea.className = "notes-textarea";
+    notesArea.placeholder = "Add notes...";
+    notesArea.value = c.notes;
+    notesArea.addEventListener("input", () => {
+      enableWrites();
+      c.notes = notesArea.value;
+      saveState();
+    });
+
+    notesSection.appendChild(notesArea);
+    inv.appendChild(notesSection);
+
     // Add event listeners for collapse buttons
     charEl.querySelectorAll('.collapse-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
