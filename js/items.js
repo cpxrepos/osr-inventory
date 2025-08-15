@@ -1,6 +1,6 @@
 /* ===== Items Management ===== */
 import { state, saveState, enableWrites } from './state.js';
-import { $ } from './helpers.js';
+import { $, debounce } from './helpers.js';
 import { 
   database, 
   ref, 
@@ -237,6 +237,18 @@ function renderItems() {
       alert("Please enter a valid item name");
     }
   });
+
+  // Debounced saving for notes field in create item form
+  const createNotesInput = $("#itemNotes");
+  if (createNotesInput) {
+    const debouncedCreateNotes = debounce(() => {
+      enableWrites();
+      if (!state.ui) state.ui = {};
+      state.ui.tempItemNotes = createNotesInput.value;
+      saveState();
+    }, 400);
+    createNotesInput.addEventListener("input", debouncedCreateNotes);
+  }
   
   // Toggle sub-slot options visibility based on checkbox state
   $("#itemHasSubSlots")?.addEventListener("change", () => {
@@ -305,6 +317,19 @@ function renderItems() {
       alert("Please enter a valid item name");
     }
   });
+
+  // Debounced saving for notes field in edit item form
+  const editNotesInput = $("#editItemNotes");
+  if (editNotesInput) {
+    const debouncedEditNotes = debounce(() => {
+      enableWrites();
+      const id = $("#editItemId")?.value || "";
+      if (!id || !state.items[id]) return;
+      state.items[id].notes = editNotesInput.value;
+      saveState(`items/${id}/notes`, state.items[id].notes);
+    }, 400);
+    editNotesInput.addEventListener("input", debouncedEditNotes);
+  }
   
   // Toggle sub-slot options visibility based on checkbox state
   $("#editItemHasSubSlots")?.addEventListener("change", () => {
@@ -412,9 +437,14 @@ function toggleCreateItemForm() {
       document.querySelectorAll(".sub-slot-options").forEach(el => {
         el.classList.add("hidden");
       });
+      if (!state.ui) state.ui = {};
+      state.ui.tempItemNotes = "";
       $("#itemName").focus();
+    } else {
+      // Clear any stored draft when hiding
+      if (state.ui) state.ui.tempItemNotes = "";
     }
-    
+
     // Hide edit form if open
     const editForm = $("#editItemForm");
     if (editForm && !editForm.classList.contains("hidden")) {

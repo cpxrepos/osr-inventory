@@ -5,7 +5,8 @@ import {
   slotsFromSTR,
   speedFactorFromEmpty,
   fmtSpeed,
-  slowdownLabel
+  slowdownLabel,
+  debounce
 } from '../helpers.js';
 
 import { createSlot } from './slot.js';
@@ -358,11 +359,14 @@ function renderChars() {
     notesArea.className = "notes-textarea";
     notesArea.placeholder = "Add notes...";
     notesArea.value = c.notes;
-    notesArea.addEventListener("input", () => {
+    // Debounce note saving to avoid excessive state writes while typing
+    const debouncedSaveNotes = debounce(() => {
       enableWrites();
       c.notes = notesArea.value;
       saveState();
-    });
+    }, 400);
+
+    notesArea.addEventListener("input", debouncedSaveNotes);
 
     notesSection.appendChild(notesArea);
     inv.appendChild(notesSection);
