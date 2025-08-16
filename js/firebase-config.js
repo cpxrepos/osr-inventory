@@ -13,16 +13,15 @@ import {
   child
 } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js';
 
-// Firebase configuration
-// Replace these with your actual Firebase project config
+// Firebase configuration loaded from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyAanTymL4ERBbH_WaLSE9w6sDazPUk600o",
-  authDomain: "osr-inventory.firebaseapp.com",
-  databaseURL: "https://osr-inventory-default-rtdb.firebaseio.com",
-  projectId: "osr-inventory",
-  storageBucket: "osr-inventory.firebasestorage.app",
-  messagingSenderId: "571731379953",
-  appId: "1:571731379953:web:64ad01944c806b329ccb50"
+  apiKey: window._env_.FIREBASE_API_KEY,
+  authDomain: window._env_.FIREBASE_AUTH_DOMAIN,
+  databaseURL: window._env_.FIREBASE_DATABASE_URL,
+  projectId: window._env_.FIREBASE_PROJECT_ID,
+  storageBucket: window._env_.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: window._env_.FIREBASE_MESSAGING_SENDER_ID,
+  appId: window._env_.FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

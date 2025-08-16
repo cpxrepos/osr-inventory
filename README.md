@@ -122,20 +122,21 @@ Note: These rules allow anyone to read and write to your database. For productio
 
 ### 5. Update Firebase Configuration in the App
 
-1. Open `js/firebase-config.js` in your code editor
+1. Open `env.js.example` in your code editor
 2. Replace the placeholder configuration with the actual configuration from your Firebase project:
 
 ```javascript
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+window._env_ = {
+  "FIREBASE_API_KEY": "your_api_key_here",
+  "FIREBASE_AUTH_DOMAIN": "your_project_id.firebaseapp.com",
+  "FIREBASE_DATABASE_URL": "https://your_project_id-default-rtdb.firebaseio.com",
+  "FIREBASE_PROJECT_ID": "your_project_id",
+  "FIREBASE_STORAGE_BUCKET": "your_project_id.appspot.com",
+  "FIREBASE_MESSAGING_SENDER_ID": "your_sender_id",
+  "FIREBASE_APP_ID": "your_app_id"
 };
 ```
+3. Save as `env.js`
 
 ## Development Notes
 
