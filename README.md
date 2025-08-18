@@ -28,7 +28,12 @@ inventory-tracker/
 ├── css/
 │   └── styles.css          # Application styling
 └── js/
-    ├── characters.js       # Character management
+    ├── characters.js       # Character management exports
+    ├── characters/         # Character-related modules
+    │   ├── events.js       # Character event handlers
+    │   ├── list.js         # Character list rendering
+    │   ├── render.js       # Character rendering logic
+    │   └── slot.js         # Inventory slot calculations
     ├── export-import.js    # Data export/import functionality
     ├── firebase-config.js  # Firebase configuration
     ├── helpers.js          # Utility functions
