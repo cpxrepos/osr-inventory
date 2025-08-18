@@ -49,6 +49,12 @@
     background-color: #2196F3;
     color: white;
   }
+
+  .auth-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
 </style>
 </head>
 <body>
@@ -57,6 +63,10 @@
 <div id="read-only-status" class="read-only">Read-Only Mode</div>
 <header>
   <h1>Inventory Tracker</h1>
+  <div class="auth-controls">
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn" style="display:none">Logout</button>
+  </div>
   <div class="sub">Slots‑only slowdown from 120' base → 90'/60'/30' when empty slots drop below 6 / 4 / 2.</div>
 </header>
 

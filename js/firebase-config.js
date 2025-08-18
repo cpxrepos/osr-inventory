@@ -2,16 +2,23 @@
 
 // Import Firebase modules
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js';
-import { 
-  getDatabase, 
-  ref, 
-  onValue, 
-  set, 
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
   update,
   push,
   get,
   child
 } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut
+} from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js';
 
 // Firebase configuration loaded from environment variables
 const firebaseConfig = {
@@ -27,6 +34,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+const auth = getAuth(app);
 
 // Generate a unique ID for this user's session if they don't have one
 let sessionId = localStorage.getItem("inventory_session_id");
@@ -38,6 +46,7 @@ if (!sessionId) {
 // Export Firebase modules and initialized instances
 export {
   database,
+  auth,
   ref,
   onValue,
   set,
@@ -45,5 +54,9 @@ export {
   push,
   get,
   child,
-  sessionId
+  sessionId,
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut
 };

@@ -1,5 +1,5 @@
 /* ===== Items Management ===== */
-import { state, saveState, enableWrites } from './state.js';
+import { state, saveState, enableWrites, userPath } from './state.js';
 import { $, debounce } from './helpers.js';
 import { 
   database, 
@@ -14,26 +14,32 @@ import {
 // Load items from Firebase database, with fallback to local file for initial setup
 async function loadItemsFromFile() {
   try {
-    // First try to get items from Firebase
-    try {
-      const itemsRef = ref(database, 'items');
-      const snapshot = await get(itemsRef).catch(err => {
-        console.warn("Firebase read failed:", err);
-        throw err; // Re-throw to go to the fallback
-      });
-      
-      if (snapshot.exists() && snapshot.val()) {
-        // We have items in Firebase, use those
-        state.items = snapshot.val() || {};
-        console.log("Loaded items from Firebase:", Object.keys(state.items).length);
-      } else {
-        // No items in Firebase yet, load from local file and push to Firebase
-        console.log("No items in Firebase, initializing from local file");
+    // First try to get items from Firebase if logged in
+    const itemsPath = userPath('items');
+    if (itemsPath) {
+      try {
+        const itemsRef = ref(database, itemsPath);
+        const snapshot = await get(itemsRef).catch(err => {
+          console.warn("Firebase read failed:", err);
+          throw err; // Re-throw to go to the fallback
+        });
+
+        if (snapshot.exists() && snapshot.val()) {
+          // We have items in Firebase, use those
+          state.items = snapshot.val() || {};
+          console.log("Loaded items from Firebase:", Object.keys(state.items).length);
+        } else {
+          // No items in Firebase yet, load from local file and push to Firebase
+          console.log("No items in Firebase, initializing from local file");
+          await initializeItemsFromLocalFile();
+        }
+      } catch(fbErr) {
+        // Firebase access failed, fall back to local file
+        console.warn("Firebase access failed, falling back to local file:", fbErr);
         await initializeItemsFromLocalFile();
       }
-    } catch(fbErr) {
-      // Firebase access failed, fall back to local file
-      console.warn("Firebase access failed, falling back to local file:", fbErr);
+    } else {
+      // Not logged in, use local file
       await initializeItemsFromLocalFile();
     }
   } catch(err) {
@@ -58,6 +64,7 @@ async function initializeItemsFromLocalFile() {
 
     // Normalize
     state.items = {};
+    const itemsPath = userPath('items');
     for (const it of data) {
       const item = {
         name: String(it.name || '').trim(),
@@ -71,9 +78,14 @@ async function initializeItemsFromLocalFile() {
       };
       if (!item.name) continue;
       try {
-        const newRef = push(ref(database, 'items'));
-        state.items[newRef.key] = item;
-        await set(newRef, item);
+        if (itemsPath) {
+          const newRef = push(ref(database, itemsPath));
+          state.items[newRef.key] = item;
+          await set(newRef, item);
+        } else {
+          const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+          state.items[id] = item;
+        }
       } catch (fbErr) {
         console.warn("Could not save item to Firebase:", fbErr);
       }
@@ -105,8 +117,14 @@ function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, 
   const newItem = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
 
   // Generate unique ID and add to local state
-  const newRef = push(ref(database, 'items'));
-  const id = newRef.key;
+  const itemsPath = userPath('items');
+  let id;
+  if (itemsPath) {
+    const newRef = push(ref(database, itemsPath));
+    id = newRef.key;
+  } else {
+    id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
   state.items[id] = newItem;
 
   // Persist only this item

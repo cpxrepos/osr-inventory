@@ -363,7 +363,7 @@ function renderChars() {
 
     const debouncedSaveNotes = debounce(() => {
       enableWrites();
-      saveState(`inventory/chars/${ci}/notes`, c.notes);
+      saveState(`chars/${ci}/notes`, c.notes);
     }, 400);
 
     notesArea.addEventListener("input", () => {

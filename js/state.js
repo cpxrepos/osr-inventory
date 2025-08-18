@@ -1,9 +1,9 @@
 /* ===== State & Persistence ===== */
-import { 
-  database, 
-  ref, 
-  onValue, 
-  set, 
+import {
+  database,
+  ref,
+  onValue,
+  set,
   update,
   sessionId
 } from './firebase-config.js';
@@ -42,6 +42,26 @@ if (localState) {
 
 // Flag to prevent sync loops
 let isSyncing = false;
+let currentUid = null;
+let unsubscribe = null;
+
+// Build a path under the current user's scope
+function userPath(subPath = '') {
+  if (!currentUid) return null;
+  return `inventory/${currentUid}${subPath ? '/' + subPath : ''}`;
+}
+
+// Update the current user and reinitialize sync
+function setUser(uid) {
+  currentUid = uid;
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+  if (uid) {
+    initFirebaseSync();
+  }
+}
 
 // Save state to local storage and Firebase
 function saveState(path = null, value) {
@@ -49,16 +69,17 @@ function saveState(path = null, value) {
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
 
   // Don't sync to Firebase if we're currently processing a sync from Firebase
-  // or if we're in read-only mode and haven't had user interaction yet
-  if (isSyncing || state.readOnlyMode) return;
+  // or if we're in read-only mode or no user is logged in
+  if (isSyncing || state.readOnlyMode || !currentUid) return;
 
   if (path) {
-    set(ref(database, path), value);
+    const fullPath = userPath(path);
+    set(ref(database, fullPath), value);
     return;
   }
 
   // Save character state
-  set(ref(database, 'inventory'), {
+  set(ref(database, userPath()), {
     chars: state.chars,
     lastUpdated: Date.now(),
     lastUpdatedBy: sessionId
@@ -94,8 +115,9 @@ function updateReadOnlyIndicator() {
 
 // Listen for changes from Firebase
 function initFirebaseSync() {
-  const inventoryRef = ref(database, 'inventory');
-  onValue(inventoryRef, (snapshot) => {
+  if (!currentUid) return;
+  const inventoryRef = ref(database, userPath());
+  unsubscribe = onValue(inventoryRef, (snapshot) => {
     const data = snapshot.val();
     
     // Ignore null data (first initialization)
@@ -122,10 +144,12 @@ function initFirebaseSync() {
   });
 }
 
-export { 
-  state, 
+export {
+  state,
   saveState,
   initFirebaseSync,
   enableWrites,
-  updateReadOnlyIndicator
+  updateReadOnlyIndicator,
+  setUser,
+  userPath
 };
