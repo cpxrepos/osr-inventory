@@ -1,10 +1,11 @@
 /* ===== State & Persistence ===== */
-import { 
-  database, 
-  ref, 
-  onValue, 
-  set, 
+import {
+  database,
+  ref,
+  onValue,
+  set,
   update,
+  serverTimestamp,
   sessionId
 } from './firebase-config.js';
 
@@ -43,6 +44,9 @@ if (localState) {
 // Flag to prevent sync loops
 let isSyncing = false;
 
+// Track last update timestamp from Firebase
+let lastInventoryUpdate = 0;
+
 // Save state to local storage and Firebase
 function saveState(path = null, value) {
   // Always save to localStorage for quick loading next time
@@ -60,7 +64,7 @@ function saveState(path = null, value) {
   // Save character state
   set(ref(database, 'inventory'), {
     chars: state.chars,
-    lastUpdated: Date.now(),
+    lastUpdated: serverTimestamp(),
     lastUpdatedBy: sessionId
   });
 }
@@ -102,13 +106,31 @@ function initFirebaseSync() {
     if (!data) return;
     
     // Skip if this update was triggered by the current session
-    if (data.lastUpdatedBy === sessionId) return;
+    if (data.lastUpdatedBy === sessionId) {
+      if (typeof data.lastUpdated === 'number') {
+        lastInventoryUpdate = data.lastUpdated;
+      }
+      return;
+    }
+
+    // Ignore outdated updates
+    if (
+      typeof data.lastUpdated === 'number' &&
+      lastInventoryUpdate &&
+      data.lastUpdated <= lastInventoryUpdate
+    ) {
+      return;
+    }
     
     // Flag that we're syncing to prevent loops
     isSyncing = true;
     
     // Update local state
     state.chars = data.chars || [];
+
+    if (typeof data.lastUpdated === 'number') {
+      lastInventoryUpdate = data.lastUpdated;
+    }
     
     // Also update localStorage for faster loading next time
     localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
