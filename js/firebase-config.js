@@ -2,15 +2,16 @@
 
 // Import Firebase modules
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js';
-import { 
-  getDatabase, 
-  ref, 
-  onValue, 
-  set, 
-  update,
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
   push,
   get,
-  child
+  child,
+  runTransaction,
+  serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js';
 
 // Firebase configuration loaded from environment variables
@@ -41,9 +42,10 @@ export {
   ref,
   onValue,
   set,
-  update,
   push,
   get,
   child,
+  runTransaction,
+  serverTimestamp,
   sessionId
 };
