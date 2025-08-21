@@ -318,13 +318,17 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
 
     // Close expanded coin purse when clicking outside
     if (expandedCoinPurses.has(`${ci}-${section}-${si}`)) {
-      document.addEventListener('click', function closeExpandedCoinPurse(e) {
-        if (!slot.contains(e.target)) {
-          expandedCoinPurses.delete(`${ci}-${section}-${si}`);
-          renderChars();
-          document.removeEventListener('click', closeExpandedCoinPurse);
+      setTimeout(() => {
+        function closeExpandedCoinPurse(e) {
+          const slotElement = document.querySelector(`.slot[data-char="${ci}"][data-slot="${si}"][data-section="${section}"]`);
+          if (!slotElement || !slotElement.contains(e.target)) {
+            expandedCoinPurses.delete(`${ci}-${section}-${si}`);
+            renderChars();
+            document.removeEventListener('click', closeExpandedCoinPurse);
+          }
         }
-      });
+        document.addEventListener('click', closeExpandedCoinPurse);
+      }, 0);
     }
 
     // Add event listeners to prevent arrow keys on coin inputs
