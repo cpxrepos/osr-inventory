@@ -1,5 +1,5 @@
 /* ===== Export/Import Functionality ===== */
-import { state, saveState } from './state.js';
+import { state, saveState, enableWrites } from './state.js';
 import { $ } from './helpers.js';
 import { renderItems } from './items.js';
 import { renderChars, renderCharList } from './characters.js';
@@ -40,6 +40,9 @@ function importData() {
         // Replace current inventory and character data with imported data
         state.chars = obj.chars;
         state.items = obj.items || {};
+
+        // Enable writes before persisting items to Firebase
+        enableWrites();
 
         // Persist items individually
         for (const [id, item] of Object.entries(state.items)) {
