@@ -1,90 +1,34 @@
 /* ===== Items Management ===== */
+// The item list originates exclusively from Firebase and is modified
+// through item library interactions.
 import { state, saveState, enableWrites } from './state.js';
 import { $, debounce } from './helpers.js';
-import { 
-  database, 
-  ref, 
-  onValue,
+import {
+  database,
+  ref,
   get,
-  set,
-  push,
-  child
+  push
 } from './firebase-config.js';
 
-// Load items from Firebase database, with fallback to local file for initial setup
-async function loadItemsFromFile() {
+// Load items from Firebase. No local fallback is used; if no data exists the
+// item list is initialized as an empty object.
+async function loadItems() {
   try {
-    // First try to get items from Firebase
-    try {
-      const itemsRef = ref(database, 'items');
-      const snapshot = await get(itemsRef).catch(err => {
-        console.warn("Firebase read failed:", err);
-        throw err; // Re-throw to go to the fallback
-      });
-      
-      if (snapshot.exists() && snapshot.val()) {
-        // We have items in Firebase, use those
-        state.items = snapshot.val() || {};
-        console.log("Loaded items from Firebase:", Object.keys(state.items).length);
-      } else {
-        // No items in Firebase yet, load from local file and push to Firebase
-        console.log("No items in Firebase, initializing from local file");
-        await initializeItemsFromLocalFile();
-      }
-    } catch(fbErr) {
-      // Firebase access failed, fall back to local file
-      console.warn("Firebase access failed, falling back to local file:", fbErr);
-      await initializeItemsFromLocalFile();
+    const itemsRef = ref(database, 'items');
+    const snapshot = await get(itemsRef);
+    if (snapshot.exists() && snapshot.val()) {
+      state.items = snapshot.val();
+    } else {
+      state.items = {};
     }
-  } catch(err) {
-    // All loading attempts failed
-    console.error("All item loading attempts failed:", err);
-    state.items = {}; // empty if not available
+    saveState();
+  } catch (err) {
+    console.error("Failed to load items from Firebase:", err);
+    state.items = {};
     saveState();
   }
-  
+
   renderItems();
-}
-
-// Initialize items from local JSON file (only used for first-time setup)
-async function initializeItemsFromLocalFile() {
-  try {
-    // First load from local file
-    const res = await fetch('items.json', {cache:'no-store'});
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error("items.json must be an array");
-
-    // Normalize
-    state.items = {};
-    for (const it of data) {
-      const item = {
-        name: String(it.name || '').trim(),
-        slots: Math.max(1, Number(it.slots || 1)),
-        notes: typeof it.notes === 'string' ? it.notes : '',
-        hasSubSlots: it.hasSubSlots || false,
-        maxSubSlots: it.hasSubSlots ? Math.min(3, Math.max(1, Number(it.maxSubSlots || 1))) : 0,
-        subSlotName: it.hasSubSlots ? String(it.subSlotName || 'unit') : '',
-        hasCoinSlots: it.hasCoinSlots || false,
-        coinTypes: it.hasCoinSlots ? (Array.isArray(it.coinTypes) ? it.coinTypes : ["PP", "GP", "SP", "CP", "EP", "Gems"]) : []
-      };
-      if (!item.name) continue;
-      try {
-        const newRef = push(ref(database, 'items'));
-        state.items[newRef.key] = item;
-        await set(newRef, item);
-      } catch (fbErr) {
-        console.warn("Could not save item to Firebase:", fbErr);
-      }
-    }
-
-    saveState();
-  } catch(err) {
-    console.warn("Failed to load items from local file:", err);
-    state.items = {};
-    saveState();
-  }
 }
 
 // Add a new item to the database
@@ -498,7 +442,7 @@ function toggleEditItemForm() {
 }
 
 export {
-  loadItemsFromFile,
+  loadItems,
   renderItems,
   initItemEvents,
   addItem,

@@ -14,7 +14,7 @@ import {
 
 // Initialize state with defaults
 const state = {
-  items: {},              // loaded from items.json
+  items: {},              // loaded from Firebase item library
   chars: [],
   ui: { 
     leftCollapsed: false, 
