@@ -8,7 +8,7 @@ This application allows you to track inventory items across characters with real
 - Real-time synchronization of inventory changes across all users
 - Visual notification when changes are synced from other users
 - Connection status indicator
-- Automatic fallback to local storage when offline
+- Local storage persistence for offline use
 - Synchronizes when reconnected
 - Character creation with STR-based slot calculations
 - Encumbrance system that applies speed penalties (120' → 90'/60'/30')
