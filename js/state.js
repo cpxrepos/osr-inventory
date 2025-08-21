@@ -7,7 +7,9 @@ import {
   update,
   push,
   serverTimestamp,
-  sessionId
+  sessionId,
+  runTransaction,
+  get
 } from './firebase-config.js';
 
 // Initialize state with defaults
@@ -49,7 +51,7 @@ let isSyncing = false;
 let lastInventoryUpdate = 0;
 
 // Save state to local storage and Firebase
-function saveState(path = null, value) {
+async function saveState(path = null, value) {
   // Always save to localStorage for quick loading next time
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
 
@@ -69,12 +71,54 @@ function saveState(path = null, value) {
     sessionId
   });
 
-  // Save character state
-  set(ref(database, 'inventory'), {
-    chars: state.chars,
-    lastUpdated: serverTimestamp(),
-    lastUpdatedBy: sessionId
-  });
+  const inventoryRef = ref(database, 'inventory');
+  let tried = false;
+
+  while (true) {
+    const result = await runTransaction(inventoryRef, (currentData) => {
+      if (
+        currentData &&
+        typeof currentData.lastUpdated === 'number' &&
+        currentData.lastUpdated > lastInventoryUpdate
+      ) {
+        return; // Abort transaction
+      }
+      return {
+        chars: state.chars,
+        lastUpdated: serverTimestamp(),
+        lastUpdatedBy: sessionId
+      };
+    });
+
+    if (result.committed) {
+      break;
+    }
+
+    if (tried) {
+      break;
+    }
+
+    try {
+      const snapshot = await get(inventoryRef);
+      const data = snapshot.val();
+      if (data) {
+        isSyncing = true;
+        state.chars = data.chars || [];
+        if (typeof data.lastUpdated === 'number') {
+          lastInventoryUpdate = data.lastUpdated;
+        }
+        localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+        const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
+        document.dispatchEvent(syncEvent);
+        isSyncing = false;
+      }
+    } catch (err) {
+      console.error('Failed to reload state:', err);
+      break;
+    }
+
+    tried = true;
+  }
 }
 
 // Enable writes after user interaction with inventory or characters
