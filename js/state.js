@@ -8,7 +8,6 @@ import {
   push,
   serverTimestamp,
   sessionId,
-  runTransaction,
   get
 } from './firebase-config.js';
 
@@ -72,52 +71,34 @@ async function saveState(path = null, value) {
   });
 
   const inventoryRef = ref(database, 'inventory');
-  let tried = false;
 
-  while (true) {
-    const result = await runTransaction(inventoryRef, (currentData) => {
-      if (
-        currentData &&
-        typeof currentData.lastUpdated === 'number' &&
-        currentData.lastUpdated > lastInventoryUpdate
-      ) {
-        return; // Abort transaction
+  try {
+    const snapshot = await get(inventoryRef);
+    const data = snapshot.val();
+    if (
+      data &&
+      typeof data.lastUpdated === 'number' &&
+      data.lastUpdated > lastInventoryUpdate
+    ) {
+      isSyncing = true;
+      state.chars = data.chars || [];
+      if (typeof data.lastUpdated === 'number') {
+        lastInventoryUpdate = data.lastUpdated;
       }
-      return {
-        chars: state.chars,
-        lastUpdated: serverTimestamp(),
-        lastUpdatedBy: sessionId
-      };
+      localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+      const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
+      document.dispatchEvent(syncEvent);
+      isSyncing = false;
+      return;
+    }
+
+    await update(inventoryRef, {
+      chars: state.chars,
+      lastUpdated: serverTimestamp(),
+      lastUpdatedBy: sessionId
     });
-
-    if (result.committed) {
-      break;
-    }
-
-    if (tried) {
-      break;
-    }
-
-    try {
-      const snapshot = await get(inventoryRef);
-      const data = snapshot.val();
-      if (data) {
-        isSyncing = true;
-        state.chars = data.chars || [];
-        if (typeof data.lastUpdated === 'number') {
-          lastInventoryUpdate = data.lastUpdated;
-        }
-        localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
-        const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
-        document.dispatchEvent(syncEvent);
-        isSyncing = false;
-      }
-    } catch (err) {
-      console.error('Failed to reload state:', err);
-      break;
-    }
-
-    tried = true;
+  } catch (err) {
+    console.error('Failed to save state:', err);
   }
 }
 
