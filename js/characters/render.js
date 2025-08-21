@@ -201,11 +201,12 @@ function renderChars() {
       equippedCol.style.display = "none";
     }
     
-    // Render equipped slots
-    c.equipped.forEach((slotObj, si) => {
+    // Render equipped slots (use a standard loop to handle sparse arrays from Firebase)
+    for (let si = 0; si < c.equipped.length; si++) {
+      const slotObj = c.equipped[si];
       const slot = createSlot(slotObj, ci, si, "equipped", c.equipped, backpackSlots, renderChars, renderCharList);
       equippedCol.appendChild(slot);
-    });
+    }
     
     equippedSection.appendChild(equippedCol);
     inv.appendChild(equippedSection);
@@ -246,11 +247,12 @@ function renderChars() {
 
     // Create a helper function for creating slot elements
 
-    // Render backpack slots
-    c.backpack.forEach((slotObj, si) => {
+    // Render backpack slots (standard loop for sparse arrays)
+    for (let si = 0; si < c.backpack.length; si++) {
+      const slotObj = c.backpack[si];
       const slot = createSlot(slotObj, ci, si, "backpack", c.backpack, backpackSlots, renderChars, renderCharList);
       backpackCol.appendChild(slot);
-    });
+    }
 
     backpackSection.appendChild(backpackCol);
     inv.appendChild(backpackSection);
@@ -291,11 +293,12 @@ function renderChars() {
         largeSackCol.style.display = "none";
       }
       
-      // Render large sack slots
-      c.largeSack.forEach((slotObj, si) => {
+      // Render large sack slots (standard loop for sparse arrays)
+      for (let si = 0; si < c.largeSack.length; si++) {
+        const slotObj = c.largeSack[si];
         const slot = createSlot(slotObj, ci, si, "largeSack", c.largeSack, backpackSlots, renderChars, renderCharList);
         largeSackCol.appendChild(slot);
-      });
+      }
       
       largeSackSection.appendChild(largeSackCol);
       inv.appendChild(largeSackSection);
@@ -335,11 +338,12 @@ function renderChars() {
         smallSackCol.style.display = "none";
       }
       
-      // Render small sack slots
-      c.smallSack.forEach((slotObj, si) => {
+      // Render small sack slots (standard loop for sparse arrays)
+      for (let si = 0; si < c.smallSack.length; si++) {
+        const slotObj = c.smallSack[si];
         const slot = createSlot(slotObj, ci, si, "smallSack", c.smallSack, backpackSlots, renderChars, renderCharList);
         smallSackCol.appendChild(slot);
-      });
+      }
       
       smallSackSection.appendChild(smallSackCol);
       inv.appendChild(smallSackSection);
