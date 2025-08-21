@@ -63,7 +63,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       enableWrites(); // Enable writes on item edit
       // Create a new single-slot item with "New Item" name
       slotsArray[si] = { name: "New Item", slots: 1, head: true };
-      saveState();
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
       renderChars();
       renderCharList();
       
@@ -87,7 +87,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     // Initialize filledSubSlots if it doesn't exist
     if (hasSubSlots && slotObj.filledSubSlots === undefined) {
       slotObj.filledSubSlots = maxSubSlots; // Start with all sub-slots filled
-      saveState();
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
     }
     
     let slotContent = `
@@ -144,7 +144,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             }
           }
         }
-        saveState();
+        saveState(`inventory/chars/${ci}`, state.chars[ci]);
       }
       // Determine if this coin purse is currently expanded (client-side only)
       const purseKey = `${ci}-${section}-${si}`;
@@ -230,8 +230,8 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       enableWrites(); // Enable writes on item drop
       const targetArray = state.chars[tci][targetSection];
       tryPlaceMulti(tci, tsi, src.name, Math.max(1, Number(src.slots || 1)), targetArray, targetSection, src);
-      saveState(); 
-      renderChars(); 
+      saveState(`inventory/chars/${tci}`, state.chars[tci]);
+      renderChars();
       renderCharList();
     }
     else if (payload.type === "slotHead") {
@@ -241,8 +241,11 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       const sourceArray = state.chars[fromChar][sourceSection];
       const targetArray = state.chars[tci][targetSection];
       moveMulti(fromChar, headIndex, tci, tsi, length, sourceArray, targetArray, sourceSection, targetSection);
-      saveState(); 
-      renderChars(); 
+      saveState(`inventory/chars/${fromChar}`, state.chars[fromChar]);
+      if (fromChar !== tci) {
+        saveState(`inventory/chars/${tci}`, state.chars[tci]);
+      }
+      renderChars();
       renderCharList();
     }
   });
@@ -271,7 +274,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     slotsArray[si] = { name, slots: cur.slots, head: true };
     for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
     
-    saveState(); 
+    saveState(`inventory/chars/${ci}`, state.chars[ci]);
     renderChars(); 
     renderCharList();
   });
@@ -285,7 +288,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   // Add event listener for coin amount updates
   if (isHead && (slotObj.hasCoinSlots || (slotObj.name && slotObj.name.toLowerCase().includes('coin')))) {
     // Ensure it has proper coin purse properties
-    if (!slotObj.hasCoinSlots) {
+      if (!slotObj.hasCoinSlots) {
       slotObj.hasCoinSlots = true;
       slotObj.coinTypes = ["PP","GP", "SP", "CP", "EP", "Gems"];
       if (!slotObj.coinAmounts) {
@@ -294,7 +297,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
           slotObj.coinAmounts[type] = 0;
         });
       }
-      saveState();
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
     }
     // Toggle expanded state when clicking on the slot
     slot.addEventListener('click', (e) => {
@@ -361,7 +364,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         // Update the coin amount in the state
         slotObj.coinAmounts = slotObj.coinAmounts || {};
         slotObj.coinAmounts[coinType] = value;
-        saveState();
+        saveState(`inventory/chars/${ci}`, state.chars[ci]);
         renderChars(); // Re-render to update coin limits
       });
     });
@@ -395,8 +398,8 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       }
       
       removeMulti(ci, headIdx, slotsArray, section);
-      saveState(); 
-      renderChars(); 
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
+      renderChars();
       renderCharList();
     } else if (btn.dataset.action === "edit") {
       enableWrites(); // Enable writes on edit button
@@ -415,9 +418,9 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       const coinTypes = cur.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"];
       const coinAmounts = cur.coinAmounts || {};
       
-      slotsArray[si] = { 
-        name, 
-        slots: cur.slots, 
+      slotsArray[si] = {
+        name,
+        slots: cur.slots,
         head: true,
         hasSubSlots,
         maxSubSlots,
@@ -430,8 +433,8 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
       
-      saveState(); 
-      renderChars(); 
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
+      renderChars();
       renderCharList();
     } 
     else if (btn.dataset.action === "use") {
@@ -441,15 +444,15 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       if (cur.hasSubSlots && cur.filledSubSlots > 0) {
         cur.filledSubSlots--;
-        
+
         // If all sub-slots are used, ask if the user wants to remove the item
         if (cur.filledSubSlots === 0) {
           if (confirm(`All ${cur.subSlotName}s have been used. Remove the item?`)) {
             removeMulti(ci, si, slotsArray, section);
           }
         }
-        
-        saveState();
+
+        saveState(`inventory/chars/${ci}`, state.chars[ci]);
         renderChars();
         renderCharList();
       }
@@ -461,7 +464,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       if (cur.hasSubSlots && cur.filledSubSlots < cur.maxSubSlots) {
         cur.filledSubSlots++;
-        saveState();
+        saveState(`inventory/chars/${ci}`, state.chars[ci]);
         renderChars();
         renderCharList();
       }

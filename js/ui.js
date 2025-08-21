@@ -23,16 +23,16 @@ function applyCollapses() {
 // Initialize UI event listeners
 function initUIControls() {
   // Panel collapse toggles
-  $("#toggleLeft").addEventListener("click", () => { 
-    state.ui.leftCollapsed = !state.ui.leftCollapsed; 
-    saveState(); 
-    applyCollapses(); 
+  $("#toggleLeft").addEventListener("click", () => {
+    state.ui.leftCollapsed = !state.ui.leftCollapsed;
+    saveState('ui', state.ui);
+    applyCollapses();
   });
   
-  $("#toggleRight").addEventListener("click", () => { 
-    state.ui.rightCollapsed = !state.ui.rightCollapsed; 
-    saveState(); 
-    applyCollapses(); 
+  $("#toggleRight").addEventListener("click", () => {
+    state.ui.rightCollapsed = !state.ui.rightCollapsed;
+    saveState('ui', state.ui);
+    applyCollapses();
   });
 }
 

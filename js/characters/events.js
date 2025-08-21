@@ -13,7 +13,7 @@ function initCharacterEvents() {
     const equipped = Array(9).fill(null);
     const backpack = Array.from({length: nSlots}, () => null);
     state.chars.push({ name, str, equipped, backpack, notes: "" });
-    saveState();
+    saveState('inventory/chars', state.chars);
     renderChars();
     renderCharList();
     $("#name").value = "";

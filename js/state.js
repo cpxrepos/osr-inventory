@@ -79,7 +79,21 @@ async function saveState(path = null, value) {
   if (isSyncing || state.readOnlyMode) return;
 
   if (path) {
-    set(ref(database, path), value);
+    // If the path is under the inventory node, update it along with the
+    // timestamp/owner metadata so other clients receive the change without
+    // overwriting unrelated characters.
+    if (path.startsWith('inventory/')) {
+      const inventoryRef = ref(database, 'inventory');
+      const updates = {
+        [path.replace('inventory/', '')]: value,
+        lastUpdated: serverTimestamp(),
+        lastUpdatedBy: sessionId
+      };
+      await update(inventoryRef, updates);
+    } else {
+      // For all other paths just set the value directly
+      await set(ref(database, path), value);
+    }
     return;
   }
 
