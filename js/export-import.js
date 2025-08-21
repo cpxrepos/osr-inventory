@@ -48,7 +48,7 @@ function importData() {
         for (const [id, item] of Object.entries(state.items)) {
           saveState(`items/${id}`, item);
         }
-        saveState();
+        saveState('inventory/chars', state.chars);
         
         // Update all UI components
         renderItems();

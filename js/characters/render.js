@@ -47,8 +47,8 @@ function renderChars() {
     if (c.backpack.length !== backpackSlots) {
       const old = c.backpack.slice(0, backpackSlots);
       while (old.length < backpackSlots) old.push(null);
-      c.backpack = old; 
-      saveState();
+      c.backpack = old;
+      saveState(`inventory/chars/${ci}/backpack`, c.backpack);
     }
 
     // FIXED: Ensure equipped array is ALWAYS exactly 9 slots regardless of STR
@@ -58,13 +58,13 @@ function renderChars() {
       const old = c.equipped.slice(0, Math.min(c.equipped.length, 9));
       while (old.length < 9) old.push(null);
       c.equipped = old;
-      saveState();
+      saveState(`inventory/chars/${ci}/equipped`, c.equipped);
     }
     
     // Initialize notes field if missing
     if (typeof c.notes !== "string") {
       c.notes = "";
-      saveState();
+      saveState(`inventory/chars/${ci}/notes`, c.notes);
     }
 
     // Check for sacks in equipped section
@@ -97,14 +97,14 @@ function renderChars() {
       const old = c.largeSack.slice(0, backpackSlots);
       while (old.length < backpackSlots) old.push(null);
       c.largeSack = old;
-      saveState();
+      saveState(`inventory/chars/${ci}/largeSack`, c.largeSack);
     }
     
     if (hasSmallSack && c.smallSack.length !== 9) {
       const old = c.smallSack.slice(0, 9);
       while (old.length < 9) old.push(null);
       c.smallSack = old;
-      saveState();
+      saveState(`inventory/chars/${ci}/smallSack`, c.smallSack);
     }
 
     // Count occupied slots in backpack and large sack (if equipped)
@@ -398,7 +398,7 @@ function renderChars() {
           state.ui.smallSackCollapsed[charIndex] = !state.ui.smallSackCollapsed[charIndex];
         }
         
-        saveState();
+        saveState('ui', state.ui);
         renderChars();
       });
     });

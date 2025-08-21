@@ -75,7 +75,7 @@ function renderCharList() {
         // Reorder the characters array
         const [movedChar] = state.chars.splice(fromIndex, 1);
         state.chars.splice(toIndex, 0, movedChar);
-        saveState();
+        saveState('inventory/chars', state.chars);
         renderChars();
         renderCharList();
       }
@@ -90,12 +90,12 @@ function renderCharList() {
         if (action === "delete") {
           if (confirm(`Delete ${state.chars[idx].name}?`)) {
             enableWrites();
-            state.chars.splice(idx, 1); 
-            saveState(); 
-            renderChars(); 
+            state.chars.splice(idx, 1);
+            saveState('inventory/chars', state.chars);
+            renderChars();
             renderCharList();
           }
-        } 
+        }
         else if (action === "toggle-visibility") {
           enableWrites();
           const hiddenIndex = state.ui.hiddenChars.indexOf(idx);
@@ -106,8 +106,8 @@ function renderCharList() {
             // Character is currently visible, hide it
             state.ui.hiddenChars.push(idx);
           }
-          saveState();
-          renderChars(); 
+          saveState('ui/hiddenChars', state.ui.hiddenChars);
+          renderChars();
           renderCharList();
         }
       });

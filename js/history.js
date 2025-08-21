@@ -19,7 +19,7 @@ async function restoreSnapshot(key) {
   if (!data) return null;
 
   state.chars = data.chars || [];
-  saveState();
+  saveState('inventory/chars', state.chars);
   return data;
 }
 

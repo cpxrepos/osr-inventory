@@ -26,11 +26,11 @@ async function loadItems() {
     } else {
       state.items = {};
     }
-    saveState();
+    saveState('items', state.items);
   } catch (err) {
     console.error("Failed to load items from Firebase:", err);
     state.items = {};
-    saveState();
+    saveState('items', state.items);
   }
 
   renderItems();
@@ -43,7 +43,7 @@ function initItemSync() {
     const data = snapshot.val() || {};
     state.items = data;
     // Save to local storage; saveState() also handles read-only safeguards
-    saveState();
+    saveState('items', state.items);
     renderItems();
   });
 }
