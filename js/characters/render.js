@@ -5,8 +5,7 @@ import {
   slotsFromSTR,
   speedFactorFromEmpty,
   fmtSpeed,
-  slowdownLabel,
-  debounce
+  slowdownLabel
 } from '../helpers.js';
 
 import { createSlot } from './slot.js';
@@ -350,28 +349,32 @@ function renderChars() {
     const notesSection = document.createElement("div");
     notesSection.className = "inventory-section";
 
-    const notesTitle = document.createElement("div");
-    notesTitle.className = "section-title";
+    const notesHeader = document.createElement("div");
+    notesHeader.className = "section-title";
+
+    const notesTitle = document.createElement("span");
     notesTitle.textContent = "Notes";
-    notesSection.appendChild(notesTitle);
+    notesHeader.appendChild(notesTitle);
+
+    const saveNotesBtn = document.createElement("button");
+    saveNotesBtn.className = "btn";
+    saveNotesBtn.textContent = "Save";
+    saveNotesBtn.addEventListener("click", () => {
+      enableWrites();
+      saveState(`inventory/chars/${ci}/notes`, c.notes);
+    });
+    notesHeader.appendChild(saveNotesBtn);
+
+    notesSection.appendChild(notesHeader);
 
     const notesArea = document.createElement("textarea");
     notesArea.className = "notes-textarea";
     notesArea.placeholder = "Add notes...";
     notesArea.value = c.notes;
-    // Update local state immediately and only persist the current notes field
-
-    const debouncedSaveNotes = debounce(() => {
-      enableWrites();
-      saveState(`inventory/chars/${ci}/notes`, c.notes);
-    }, 400);
 
     notesArea.addEventListener("input", () => {
       c.notes = notesArea.value;
-
-      debouncedSaveNotes();
     });
-
 
     notesSection.appendChild(notesArea);
     inv.appendChild(notesSection);
