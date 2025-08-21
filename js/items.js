@@ -7,7 +7,10 @@ import {
   database,
   ref,
   get,
-  push
+  push,
+  onValue,
+  serverTimestamp,
+  sessionId
 } from './firebase-config.js';
 
 // Load items from Firebase. No local fallback is used; if no data exists the
@@ -31,6 +34,18 @@ async function loadItems() {
   renderItems();
 }
 
+// Keep items in sync across sessions
+function initItemSync() {
+  const itemsRef = ref(database, 'items');
+  onValue(itemsRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    state.items = data;
+    // Save to local storage; saveState() also handles read-only safeguards
+    saveState();
+    renderItems();
+  });
+}
+
 // Add a new item to the database
 function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
   enableWrites(); // Ensure we can write to Firebase
@@ -52,6 +67,13 @@ function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, 
   const newRef = push(ref(database, 'items'));
   const id = newRef.key;
   state.items[id] = newItem;
+
+  // Record history snapshot
+  push(ref(database, 'items/history'), {
+    items: state.items,
+    timestamp: serverTimestamp(),
+    sessionId
+  });
 
   // Persist only this item
   saveState(`items/${id}`, newItem);
@@ -79,6 +101,13 @@ function editItem(id, name, slots, notes = "", hasSubSlots = false, maxSubSlots 
   // Update the item
   state.items[id] = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
 
+  // Record history snapshot
+  push(ref(database, 'items/history'), {
+    items: state.items,
+    timestamp: serverTimestamp(),
+    sessionId
+  });
+
   // Persist only this item
   saveState(`items/${id}`, state.items[id]);
 
@@ -96,6 +125,13 @@ function deleteItem(id) {
 
   // Remove from local state
   delete state.items[id];
+
+  // Record history snapshot
+  push(ref(database, 'items/history'), {
+    items: state.items,
+    timestamp: serverTimestamp(),
+    sessionId
+  });
 
   // Persist removal
   saveState(`items/${id}`, null);
@@ -444,6 +480,7 @@ function toggleEditItemForm() {
 export {
   loadItems,
   renderItems,
+  initItemSync,
   initItemEvents,
   addItem,
   editItem,
