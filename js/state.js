@@ -5,6 +5,7 @@ import {
   onValue,
   set,
   update,
+  push,
   serverTimestamp,
   sessionId
 } from './firebase-config.js';
@@ -60,6 +61,13 @@ function saveState(path = null, value) {
     set(ref(database, path), value);
     return;
   }
+
+  // Backup current state before saving
+  push(ref(database, 'inventory/history'), {
+    chars: state.chars,
+    timestamp: serverTimestamp(),
+    sessionId
+  });
 
   // Save character state
   set(ref(database, 'inventory'), {

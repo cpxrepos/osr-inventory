@@ -77,6 +77,24 @@ The testing guide provides buttons to help you test specific features, such as:
 - Testing offline mode functionality
 - Verifying server setup
 
+## Backup and Restore
+
+Every time the inventory is saved, a snapshot of the current character data is stored in the `inventory/history` path of the Firebase database along with a timestamp and session identifier. These snapshots allow you to roll back to an earlier state if needed.
+
+To work with history snapshots in the browser console:
+
+```javascript
+import { fetchHistory, restoreSnapshot } from './js/history.js';
+
+// List available snapshots
+fetchHistory().then(console.log);
+
+// Restore a snapshot by its key
+restoreSnapshot('<snapshotKey>');
+```
+
+Restoring will update local storage and sync the chosen snapshot back to all connected clients.
+
 ## Firebase Setup Instructions
 
 To enable real-time syncing across users, follow these steps to set up Firebase:
