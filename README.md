@@ -130,10 +130,8 @@ To enable real-time syncing across users, follow these steps to set up Firebase:
 ```json
 {
   "rules": {
-    "inventory": {
-      ".read": true,
-      ".write": true
-    }
+    "inventory": { ".read": true, ".write": true },
+    "items": { ".read": true, ".write": true }
   }
 }
 ```
