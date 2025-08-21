@@ -20,7 +20,6 @@ This application allows you to track inventory items across characters with real
 ```
 inventory-tracker/
 ├── index.html              # Main application page
-├── items.json              # Item database
 ├── README.md               # This documentation file
 ├── sync-test.html          # Testing guide and utilities
 ├── test-server.bat         # Windows server setup script
