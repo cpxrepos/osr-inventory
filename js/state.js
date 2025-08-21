@@ -4,9 +4,10 @@ import {
   ref,
   onValue,
   set,
-  update,
   serverTimestamp,
-  sessionId
+  sessionId,
+  runTransaction,
+  get
 } from './firebase-config.js';
 
 // Initialize state with defaults
@@ -47,8 +48,29 @@ let isSyncing = false;
 // Track last update timestamp from Firebase
 let lastInventoryUpdate = 0;
 
+// Reload latest inventory state from Firebase
+async function reloadLatestInventory() {
+  const snapshot = await get(ref(database, 'inventory'));
+  const data = snapshot.val();
+  if (!data) return;
+
+  isSyncing = true;
+  state.chars = data.chars || [];
+
+  if (typeof data.lastUpdated === 'number') {
+    lastInventoryUpdate = data.lastUpdated;
+  }
+
+  localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+
+  const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
+  document.dispatchEvent(syncEvent);
+
+  isSyncing = false;
+}
+
 // Save state to local storage and Firebase
-function saveState(path = null, value) {
+async function saveState(path = null, value, retry = true) {
   // Always save to localStorage for quick loading next time
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
 
@@ -61,12 +83,37 @@ function saveState(path = null, value) {
     return;
   }
 
-  // Save character state
-  set(ref(database, 'inventory'), {
-    chars: state.chars,
-    lastUpdated: serverTimestamp(),
-    lastUpdatedBy: sessionId
-  });
+  const inventoryRef = ref(database, 'inventory');
+
+  try {
+    const result = await runTransaction(inventoryRef, (current) => {
+      if (
+        current &&
+        typeof current.lastUpdated === 'number' &&
+        lastInventoryUpdate &&
+        current.lastUpdated > lastInventoryUpdate
+      ) {
+        return;
+      }
+
+      return {
+        chars: state.chars,
+        lastUpdated: serverTimestamp(),
+        lastUpdatedBy: sessionId
+      };
+    });
+
+    if (!result.committed && retry) {
+      await reloadLatestInventory();
+      await saveState(null, null, false);
+    }
+  } catch (err) {
+    console.error('Failed to save state:', err);
+    if (retry) {
+      await reloadLatestInventory();
+      await saveState(null, null, false);
+    }
+  }
 }
 
 // Enable writes after user interaction with inventory or characters
