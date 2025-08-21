@@ -12,7 +12,8 @@ import {
   get,
   child,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  remove
 } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js';
 
 // Firebase configuration loaded from environment variables
@@ -49,5 +50,6 @@ export {
   child,
   serverTimestamp,
   runTransaction,
+  remove,
   sessionId
 };

@@ -10,7 +10,9 @@ import {
   push,
   onValue,
   serverTimestamp,
-  sessionId
+  sessionId,
+  set,
+  remove
 } from './firebase-config.js';
 
 // Load items from Firebase. No local fallback is used; if no data exists the
@@ -47,7 +49,7 @@ function initItemSync() {
 }
 
 // Add a new item to the database
-function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
+async function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
   enableWrites(); // Ensure we can write to Firebase
   
   // Validate input
@@ -63,29 +65,29 @@ function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, 
   // Create the new item
   const newItem = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
 
-  // Generate unique ID and add to local state
-  const newRef = push(ref(database, 'items'));
-  const id = newRef.key;
-  state.items[id] = newItem;
+  try {
+    const newRef = await push(ref(database, 'items'), newItem);
+    const id = newRef.key;
+    state.items[id] = newItem;
 
-  // Record history snapshot
-  push(ref(database, 'items/history'), {
-    items: state.items,
-    timestamp: serverTimestamp(),
-    sessionId
-  });
+    // Record history snapshot
+    await push(ref(database, 'items/history'), {
+      items: state.items,
+      timestamp: serverTimestamp(),
+      sessionId
+    });
 
-  // Persist only this item
-  saveState(`items/${id}`, newItem);
-
-  // Update UI
-  renderItems();
-
-  return true;
+    // Update UI
+    renderItems();
+    return true;
+  } catch (err) {
+    console.error('Failed to add item:', err);
+    return false;
+  }
 }
 
 // Edit an existing item
-function editItem(id, name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
+async function editItem(id, name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
   enableWrites(); // Ensure we can write to Firebase
   
   // Validate input
@@ -101,45 +103,51 @@ function editItem(id, name, slots, notes = "", hasSubSlots = false, maxSubSlots 
   // Update the item
   state.items[id] = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
 
-  // Record history snapshot
-  push(ref(database, 'items/history'), {
-    items: state.items,
-    timestamp: serverTimestamp(),
-    sessionId
-  });
+  try {
+    await set(ref(database, `items/${id}`), state.items[id]);
 
-  // Persist only this item
-  saveState(`items/${id}`, state.items[id]);
+    // Record history snapshot
+    await push(ref(database, 'items/history'), {
+      items: state.items,
+      timestamp: serverTimestamp(),
+      sessionId
+    });
 
-  // Update UI
-  renderItems();
-
-  return true;
+    // Update UI
+    renderItems();
+    return true;
+  } catch (err) {
+    console.error('Failed to edit item:', err);
+    return false;
+  }
 }
 
 // Delete an item from the database
-function deleteItem(id) {
+async function deleteItem(id) {
   enableWrites(); // Ensure we can write to Firebase
-  
+
   if (!state.items[id]) return false;
 
   // Remove from local state
   delete state.items[id];
 
-  // Record history snapshot
-  push(ref(database, 'items/history'), {
-    items: state.items,
-    timestamp: serverTimestamp(),
-    sessionId
-  });
+  try {
+    await remove(ref(database, `items/${id}`));
 
-  // Persist removal
-  saveState(`items/${id}`, null);
+    // Record history snapshot
+    await push(ref(database, 'items/history'), {
+      items: state.items,
+      timestamp: serverTimestamp(),
+      sessionId
+    });
 
-  // Update UI
-  renderItems();
-
-  return true;
+    // Update UI
+    renderItems();
+    return true;
+  } catch (err) {
+    console.error('Failed to delete item:', err);
+    return false;
+  }
 }
 
 // Render items list with optional search filter
@@ -201,22 +209,22 @@ function renderItems() {
   list.appendChild(formContainer);
   
   // Add event listeners to the form buttons
-  $("#saveItemBtn")?.addEventListener("click", () => {
-    const name = $("#itemName")?.value || "";
-    const slots = $("#itemSlots")?.value || 1;
-    const notes = $("#itemNotes")?.value || "";
-    const hasSubSlots = $("#itemHasSubSlots")?.checked || false;
-    const maxSubSlots = $("#itemMaxSubSlots")?.value || 3;
-    const subSlotName = $("#itemSubSlotName")?.value || "unit";
-    
-    if (addItem(name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
-      // Success, hide the form
-      toggleCreateItemForm();
-    } else {
-      // Error, show message
-      alert("Please enter a valid item name");
-    }
-  });
+    $("#saveItemBtn")?.addEventListener("click", async () => {
+      const name = $("#itemName")?.value || "";
+      const slots = $("#itemSlots")?.value || 1;
+      const notes = $("#itemNotes")?.value || "";
+      const hasSubSlots = $("#itemHasSubSlots")?.checked || false;
+      const maxSubSlots = $("#itemMaxSubSlots")?.value || 3;
+      const subSlotName = $("#itemSubSlotName")?.value || "unit";
+
+      if (await addItem(name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
+        // Success, hide the form
+        toggleCreateItemForm();
+      } else {
+        // Error, show message
+        alert("Please enter a valid item name");
+      }
+    });
 
   // Debounced saving for notes field in create item form
   const createNotesInput = $("#itemNotes");
@@ -282,7 +290,7 @@ function renderItems() {
   list.appendChild(editFormContainer);
   
   // Add event listeners to the edit form buttons
-  $("#updateItemBtn")?.addEventListener("click", () => {
+    $("#updateItemBtn")?.addEventListener("click", async () => {
     const id = $("#editItemId")?.value || "";
     const name = $("#editItemName")?.value || "";
     const slots = $("#editItemSlots")?.value || 1;
@@ -291,14 +299,14 @@ function renderItems() {
     const maxSubSlots = $("#editItemMaxSubSlots")?.value || 3;
     const subSlotName = $("#editItemSubSlotName")?.value || "unit";
     
-    if (editItem(id, name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
-      // Success, hide the form
-      toggleEditItemForm();
-    } else {
-      // Error, show message
-      alert("Please enter a valid item name");
-    }
-  });
+      if (await editItem(id, name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
+        // Success, hide the form
+        toggleEditItemForm();
+      } else {
+        // Error, show message
+        alert("Please enter a valid item name");
+      }
+    });
 
   // Debounced saving for notes field in edit item form
   const editNotesInput = $("#editItemNotes");
@@ -373,12 +381,12 @@ function renderItems() {
     deleteBtn.className = "btn icon-btn delete-btn";
     deleteBtn.innerHTML = "🗑️";
     deleteBtn.title = "Delete Item";
-    deleteBtn.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent drag
-      if (confirm(`Are you sure you want to delete "${it.name}"?`)) {
-        deleteItem(id);
-      }
-    });
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation(); // Prevent drag
+        if (confirm(`Are you sure you want to delete "${it.name}"?`)) {
+          await deleteItem(id);
+        }
+      });
     actionDiv.appendChild(deleteBtn);
     
     div.appendChild(actionDiv);
