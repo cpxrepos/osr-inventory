@@ -217,12 +217,18 @@ function renderItems() {
       const maxSubSlots = $("#itemMaxSubSlots")?.value || 3;
       const subSlotName = $("#itemSubSlotName")?.value || "unit";
 
+      // Validate locally before attempting to add
+      if (!name.trim()) {
+        alert("Please enter a valid item name");
+        return;
+      }
+
       if (await addItem(name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
         // Success, hide the form
         toggleCreateItemForm();
       } else {
-        // Error, show message
-        alert("Please enter a valid item name");
+        // Generic failure message
+        alert("Failed to add item. Please try again.");
       }
     });
 
@@ -298,14 +304,20 @@ function renderItems() {
     const hasSubSlots = $("#editItemHasSubSlots")?.checked || false;
     const maxSubSlots = $("#editItemMaxSubSlots")?.value || 3;
     const subSlotName = $("#editItemSubSlotName")?.value || "unit";
-    
-      if (await editItem(id, name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
-        // Success, hide the form
-        toggleEditItemForm();
-      } else {
-        // Error, show message
-        alert("Please enter a valid item name");
-      }
+
+    // Validate input before attempting to save
+    if (!name.trim()) {
+      alert("Please enter a valid item name");
+      return;
+    }
+
+    if (await editItem(id, name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
+      // Success, hide the form
+      toggleEditItemForm();
+    } else {
+      // Generic failure message
+      alert("Failed to update item. Please try again.");
+    }
     });
 
   // Debounced saving for notes field in edit item form
