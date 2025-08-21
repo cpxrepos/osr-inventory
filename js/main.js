@@ -1,7 +1,7 @@
 /* ===== Main Application Entry Point ===== */
 import { state, initFirebaseSync, updateReadOnlyIndicator } from './state.js';
 import { applyCollapses, initUIControls } from './ui.js';
-import { loadItemsFromFile, renderItems, initItemEvents } from './items.js';
+import { loadItems, renderItems, initItemEvents } from './items.js';
 import { renderChars, renderCharList, initCharacterEvents } from './characters.js';
 import { initExportImportEvents } from './export-import.js';
 
@@ -19,7 +19,7 @@ function initApp() {
   // Initial render
   renderCharList();
   renderChars();
-  loadItemsFromFile(); // async; will call renderItems() when done
+  loadItems(); // async; will call renderItems() when done
   
   // Initialize Firebase real-time sync
   initFirebaseSync();

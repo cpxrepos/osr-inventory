@@ -14,10 +14,10 @@ import {
 
 // Initialize state with defaults
 const state = {
-  items: {},              // loaded from items.json
+  items: {},              // loaded from database
   chars: [],
-  ui: { 
-    leftCollapsed: false, 
+  ui: {
+    leftCollapsed: false,
     rightCollapsed: false,
     hiddenChars: []       // Track which characters are hidden
   },
