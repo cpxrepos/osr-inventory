@@ -15,8 +15,8 @@ import {
 const state = {
   items: {},              // loaded from database
   chars: [],
-  ui: { 
-    leftCollapsed: false, 
+  ui: {
+    leftCollapsed: false,
     rightCollapsed: false,
     hiddenChars: []       // Track which characters are hidden
   },
@@ -43,6 +43,23 @@ if (localState) {
   Object.assign(state, localState);
 }
 
+// Remove any legacy "expanded" flags from coin purses
+function removeExpandedFlags() {
+  state.chars.forEach(char => {
+    ['equipped', 'backpack', 'smallSack', 'largeSack'].forEach(section => {
+      const arr = char[section];
+      if (!Array.isArray(arr)) return;
+      arr.forEach(slot => {
+        if (slot && typeof slot === 'object' && 'expanded' in slot) {
+          delete slot.expanded;
+        }
+      });
+    });
+  });
+}
+
+removeExpandedFlags();
+
 // Flag to prevent sync loops
 let isSyncing = false;
 
@@ -51,6 +68,9 @@ let lastInventoryUpdate = 0;
 
 // Save state to local storage and Firebase
 async function saveState(path = null, value) {
+  // Clean up any UI-only flags before persisting
+  removeExpandedFlags();
+
   // Always save to localStorage for quick loading next time
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
 
@@ -160,6 +180,9 @@ function initFirebaseSync() {
     
     // Update local state
     state.chars = data.chars || [];
+
+    // Strip any persisted expanded flags
+    removeExpandedFlags();
 
     if (typeof data.lastUpdated === 'number') {
       lastInventoryUpdate = data.lastUpdated;
