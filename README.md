@@ -21,6 +21,9 @@ This application allows you to track inventory items across characters with real
 inventory-tracker/
 ├── index.html              # Main application page
 ├── README.md               # This documentation file
+├── env.js.example          # Firebase environment configuration template
+├── package.json            # Project metadata and scripts
+├── package-lock.json       # Lockfile for reproducible installs
 ├── sync-test.html          # Testing guide and utilities
 ├── test-server.bat         # Windows server setup script
 ├── test-server.sh          # Unix/Linux/Mac server setup script
@@ -28,6 +31,7 @@ inventory-tracker/
 │   └── styles.css          # Application styling
 └── js/
     ├── characters.js       # Character management exports
+    ├── history.js          # Snapshot history utilities
     ├── characters/         # Character-related modules
     │   ├── events.js       # Character event handlers
     │   ├── list.js         # Character list rendering
@@ -76,9 +80,11 @@ The testing guide provides buttons to help you test specific features, such as:
 - Testing offline mode functionality
 - Verifying server setup
 
-## Backup and Restore
+## History Utility
 
-Every time the inventory is saved, a snapshot of the current character data is stored in the `inventory/history` path of the Firebase database along with a timestamp and session identifier. These snapshots allow you to roll back to an earlier state if needed.
+The application automatically preserves a snapshot of the current character data before each save. Each snapshot is stored in the `inventory/history` node of your Firebase database along with the session ID and a server timestamp. These snapshots let you inspect previous states or restore an earlier inventory.
+
+### Backup and Restore
 
 To work with history snapshots in the browser console:
 
