@@ -279,10 +279,49 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     renderCharList();
   });
 
-  // Right-click functionality for item removal has been disabled
+  // Right-click to duplicate an item into the next available slot
   slot.addEventListener("contextmenu", (e) => {
-    e.preventDefault(); // Still prevent the default context menu
-    // Item removal functionality has been removed
+    e.preventDefault();
+    if (!isHead) return; // Only duplicate item heads
+
+    if (!confirm("Duplicate this item?")) return;
+
+    enableWrites();
+    const cur = slotsArray[si];
+    const len = Math.max(1, Number(cur.slots || 1));
+
+    // Helper to check for contiguous empty slots
+    const hasSpace = (arr, start, needed) => {
+      for (let i = 0; i < needed; i++) {
+        if (start + i >= arr.length || arr[start + i]) return false;
+      }
+      return true;
+    };
+
+    let target = -1;
+    const startSearch = si + len;
+
+    // Search after the current item
+    for (let idx = startSearch; idx <= slotsArray.length - len; idx++) {
+      if (hasSpace(slotsArray, idx, len)) { target = idx; break; }
+    }
+
+    // Wrap around to the beginning if needed
+    if (target === -1) {
+      for (let idx = 0; idx <= si - len; idx++) {
+        if (hasSpace(slotsArray, idx, len)) { target = idx; break; }
+      }
+    }
+
+    if (target === -1) {
+      alert("No empty slots available to duplicate this item.");
+      return;
+    }
+
+    tryPlaceMulti(ci, target, cur.name, len, slotsArray, section, cur);
+    saveState(`inventory/chars/${ci}`, state.chars[ci]);
+    renderChars();
+    renderCharList();
   });
 
   // Add event listener for coin amount updates
