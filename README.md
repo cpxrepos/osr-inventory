@@ -84,6 +84,8 @@ The testing guide provides buttons to help you test specific features, such as:
 
 The application automatically preserves a snapshot of the current character data before each save. Each snapshot is stored in the `inventory/history` node of your Firebase database along with the session ID and a server timestamp. These snapshots let you inspect previous states or restore an earlier inventory.
 
+A simple viewer is available at `history.html` which lists stored snapshots and lets you restore a previous state.
+
 ### Backup and Restore
 
 To work with history snapshots in the browser console:

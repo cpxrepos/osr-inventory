@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inventory History</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  main { padding: 20px; }
+  .history-entry { display: flex; align-items: center; justify-content: space-between; padding: 8px; border: 1px solid #2a3042; border-radius: 6px; background: #101626; margin-bottom: 6px; }
+  .history-entry time { color: var(--muted); }
+  .history-entry button { padding: 4px 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Inventory History</h1>
+</header>
+<main>
+  <div id="historyList">Loading...</div>
+</main>
+<script src="env.js"></script>
+<script type="module" src="js/history-page.js"></script>
+</body>
+</html>
