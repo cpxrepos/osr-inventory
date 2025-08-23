@@ -79,10 +79,15 @@ async function saveState(path = null, value) {
   if (isSyncing || state.readOnlyMode) return;
 
   if (path) {
-    // If the path is under the inventory node, update it along with the
-    // timestamp/owner metadata so other clients receive the change without
-    // overwriting unrelated characters.
     if (path.startsWith('inventory/')) {
+      // Backup the current state before applying an inventory update
+      push(ref(database, 'inventory/history'), {
+        chars: state.chars,
+        timestamp: serverTimestamp(),
+        sessionId
+      });
+
+      // Update the specific inventory path with metadata
       const inventoryRef = ref(database, 'inventory');
       const updates = {
         [path.replace('inventory/', '')]: value,
