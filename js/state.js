@@ -15,6 +15,7 @@ import {
 const state = {
   items: {},              // loaded from database
   chars: [],
+  activeCharIndex: null,  // which character is currently editable
   ui: {
     leftCollapsed: false,
     rightCollapsed: false,
@@ -65,6 +66,16 @@ let isSyncing = false;
 
 // Track last update timestamp from Firebase
 let lastInventoryUpdate = 0;
+
+// Track which character is currently selected for editing
+function setActiveCharIndex(idx) {
+  state.activeCharIndex = idx;
+  localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+}
+
+function getActiveCharIndex() {
+  return state.activeCharIndex;
+}
 
 // Save state to local storage and Firebase
 async function saveState(path = null, value) {
@@ -219,10 +230,12 @@ function initFirebaseSync() {
   });
 }
 
-export { 
-  state, 
+export {
+  state,
   saveState,
   initFirebaseSync,
   enableWrites,
-  updateReadOnlyIndicator
+  updateReadOnlyIndicator,
+  setActiveCharIndex,
+  getActiveCharIndex
 };

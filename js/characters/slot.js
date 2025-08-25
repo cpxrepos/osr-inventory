@@ -20,6 +20,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   const isEmpty = !slotObj;
   const isHead  = !!slotObj?.head;
   const isLink  = slotObj && (slotObj.link !== undefined);
+  const isActive = ci === state.activeCharIndex;
 
   slot.className = "slot" + (isEmpty ? " empty" : "");
   slot.dataset.char = ci;
@@ -57,28 +58,30 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   // Content
   if (isEmpty) {
     slot.innerHTML = `<span class="item-tag">Empty</span>`;
-    
-    // Add double click handler for empty slots to add new items
-    slot.addEventListener("dblclick", () => {
-      enableWrites(); // Enable writes on item edit
-      // Create a new single-slot item with "New Item" name
-      slotsArray[si] = { name: "New Item", slots: 1, head: true };
-      saveState(`inventory/chars/${ci}`, state.chars[ci]);
-      renderChars();
-      renderCharList();
-      
-      // Immediately trigger the edit functionality for this new item
-      // We need to find the item after re-rendering
-      setTimeout(() => {
-        const newSlot = document.querySelector(`.slot[data-char="${ci}"][data-slot="${si}"][data-section="${section}"]`);
-        if (newSlot) {
-          const editButton = newSlot.querySelector('button[data-action="edit"]');
-          if (editButton) {
-            editButton.click();
+
+    if (isActive) {
+      // Add double click handler for empty slots to add new items
+      slot.addEventListener("dblclick", () => {
+        enableWrites(); // Enable writes on item edit
+        // Create a new single-slot item with "New Item" name
+        slotsArray[si] = { name: "New Item", slots: 1, head: true };
+        saveState(`inventory/chars/${ci}`, state.chars[ci]);
+        renderChars();
+        renderCharList();
+
+        // Immediately trigger the edit functionality for this new item
+        // We need to find the item after re-rendering
+        setTimeout(() => {
+          const newSlot = document.querySelector(`.slot[data-char="${ci}"][data-slot="${si}"][data-section="${section}"]`);
+          if (newSlot) {
+            const editButton = newSlot.querySelector('button[data-action="edit"]');
+            if (editButton) {
+              editButton.click();
+            }
           }
-        }
-      }, 50);
-    });
+        }, 50);
+      });
+    }
   } else if (isHead) {
     // Check if item has sub-slots
     const hasSubSlots = slotObj.hasSubSlots || false;
@@ -101,20 +104,24 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       slotContent += `
         <div class="sub-slots-container">
       `;
-      
+
       // Create visual indicators for sub-slots
       for (let i = 0; i < maxSubSlots; i++) {
         const isFilled = i < filledSubSlots;
         slotContent += `<span class="sub-slot ${isFilled ? 'filled' : 'empty'}" title="${isFilled ? 'Used' : 'Empty'} ${subSlotName}"></span>`;
       }
-      
-      slotContent += `</div>
+
+      if (isActive) {
+        slotContent += `</div>
         <div class="sub-slot-actions">
           <button class="sub-slot-btn" data-action="use">Use 1 ${subSlotName}</button>
-          ${filledSubSlots < maxSubSlots ? 
-            `<button class="sub-slot-btn" data-action="refill">Refill 1 ${subSlotName}</button>` : ''}
+          ${filledSubSlots < maxSubSlots ?
+            `<button class=\"sub-slot-btn\" data-action=\"refill\">Refill 1 ${subSlotName}</button>` : ''}
         </div>
       `;
+      } else {
+        slotContent += `</div>`;
+      }
     }
 // Add coin tracking if item is a Coin Purse
     else if (slotObj.hasCoinSlots || (slotObj.name && slotObj.name.toLowerCase().includes('coin'))) {
@@ -178,14 +185,15 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         slotContent += `
           <div class="coin-type-row">
             <span class="coin-icon" style="background-color: ${coinColor};">${coinType}</span>
-            <input type="number" class="coin-amount" 
-              data-coin-type="${coinType}" 
-              value="${amount}" 
-              min="0" 
-              max="${100 - (totalCoins - amount)}" 
-              data-char="${ci}" 
-              data-slot="${si}" 
-              data-section="${section}" />
+            <input type="number" class="coin-amount"
+              data-coin-type="${coinType}"
+              value="${amount}"
+              min="0"
+              max="${100 - (totalCoins - amount)}"
+              data-char="${ci}"
+              data-slot="${si}"
+              data-section="${section}"
+              ${isActive ? '' : 'disabled'} />
             
           </div>
         `;
@@ -193,13 +201,16 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       slotContent += `</div>`;
     }
-    
-    slotContent += `</div>
+
+    slotContent += `</div>`;
+    if (isActive) {
+      slotContent += `
       <span class="slot-actions">
         <button class="btn" data-action="edit">Edit</button>
         <button class="btn danger" data-action="remove">Remove</button>
       </span>
     `;
+    }
     
     slot.innerHTML = slotContent;
   } else if (isLink) {
@@ -209,120 +220,121 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     slot.innerHTML = `<span class="item-tag">${label} (occupied)</span>`;
   }
 
-  // Drag & drop
-  slot.addEventListener("dragover", e => { 
-    e.preventDefault(); 
-    slot.classList.add("dragover"); 
-  });
-  
-  slot.addEventListener("dragleave", () => slot.classList.remove("dragover"));
+  // Drag & drop only for active character
+  if (isActive) {
+    slot.addEventListener("dragover", e => {
+      e.preventDefault();
+      slot.classList.add("dragover");
+    });
 
-  slot.addEventListener("drop", e => {
-    e.preventDefault(); 
-    slot.classList.remove("dragover");
-    const payload = JSON.parse(e.dataTransfer.getData("text/plain") || "{}");
-    const tci = ci, tsi = si;
-    const targetSection = section; // equipped or backpack
+    slot.addEventListener("dragleave", () => slot.classList.remove("dragover"));
 
-    if (payload.type === "lib") {
-      const src = state.items[payload.id];
-      if (!src) return;
-      enableWrites(); // Enable writes on item drop
-      const targetArray = state.chars[tci][targetSection];
-      tryPlaceMulti(tci, tsi, src.name, Math.max(1, Number(src.slots || 1)), targetArray, targetSection, src);
-      saveState(`inventory/chars/${tci}`, state.chars[tci]);
-      renderChars();
-      renderCharList();
-    }
-    else if (payload.type === "slotHead") {
-      const { fromChar, headIndex, length } = payload;
-      const sourceSection = payload.section || "backpack"; // Default to backpack for compatibility with old data
-      enableWrites(); // Enable writes on item move
-      const sourceArray = state.chars[fromChar][sourceSection];
-      const targetArray = state.chars[tci][targetSection];
-      moveMulti(fromChar, headIndex, tci, tsi, length, sourceArray, targetArray, sourceSection, targetSection);
-      saveState(`inventory/chars/${fromChar}`, state.chars[fromChar]);
-      if (fromChar !== tci) {
+    slot.addEventListener("drop", e => {
+      e.preventDefault();
+      slot.classList.remove("dragover");
+      const payload = JSON.parse(e.dataTransfer.getData("text/plain") || "{}");
+      const tci = ci, tsi = si;
+      const targetSection = section; // equipped or backpack
+
+      if (payload.type === "lib") {
+        const src = state.items[payload.id];
+        if (!src) return;
+        enableWrites(); // Enable writes on item drop
+        const targetArray = state.chars[tci][targetSection];
+        tryPlaceMulti(tci, tsi, src.name, Math.max(1, Number(src.slots || 1)), targetArray, targetSection, src);
         saveState(`inventory/chars/${tci}`, state.chars[tci]);
+        renderChars();
+        renderCharList();
       }
-      renderChars();
-      renderCharList();
-    }
-  });
+      else if (payload.type === "slotHead") {
+        const { fromChar, headIndex, length } = payload;
+        const sourceSection = payload.section || "backpack"; // Default to backpack for compatibility with old data
+        enableWrites(); // Enable writes on item move
+        const sourceArray = state.chars[fromChar][sourceSection];
+        const targetArray = state.chars[tci][targetSection];
+        moveMulti(fromChar, headIndex, tci, tsi, length, sourceArray, targetArray, sourceSection, targetSection);
+        saveState(`inventory/chars/${fromChar}`, state.chars[fromChar]);
+        if (fromChar !== tci) {
+          saveState(`inventory/chars/${tci}`, state.chars[tci]);
+        }
+        renderChars();
+        renderCharList();
+      }
+    });
+  }
 
   // Make multi-slot heads draggable
-  if (isHead) {
+  if (isHead && isActive) {
     slot.draggable = true;
     slot.addEventListener("dragstart", e => {
       e.dataTransfer.setData("text/plain", JSON.stringify({
-        type: "slotHead", 
-        fromChar: ci, 
-        headIndex: si, 
+        type: "slotHead",
+        fromChar: ci,
+        headIndex: si,
         section: section,
         length: slotsArray[si].slots || 1
       }));
     });
   }
 
-  // Edit / Remove
-  slot.addEventListener("dblclick", () => {
-    if (!isHead) return;
-    enableWrites(); // Enable writes on item edit
-    const cur = slotsArray[si];
-    const name = prompt("Item name:", cur.name);
-    if (name === null) return;
-    slotsArray[si] = { name, slots: cur.slots, head: true };
-    for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
-    
-    saveState(`inventory/chars/${ci}`, state.chars[ci]);
-    renderChars(); 
-    renderCharList();
-  });
+  // Edit / Remove and context actions only for active character
+  if (isHead && isActive) {
+    slot.addEventListener("dblclick", () => {
+      enableWrites(); // Enable writes on item edit
+      const cur = slotsArray[si];
+      const name = prompt("Item name:", cur.name);
+      if (name === null) return;
+      slotsArray[si] = { name, slots: cur.slots, head: true };
+      for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
 
-  // Right-click to duplicate an item into the next available slot
-  slot.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    if (!isHead) return; // Only duplicate item heads
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
+      renderChars();
+      renderCharList();
+    });
 
-    if (!confirm("Duplicate this item?")) return;
+    // Right-click to duplicate an item into the next available slot
+    slot.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      if (!confirm("Duplicate this item?")) return;
 
-    enableWrites();
-    const cur = slotsArray[si];
-    const len = Math.max(1, Number(cur.slots || 1));
+      enableWrites();
+      const cur = slotsArray[si];
+      const len = Math.max(1, Number(cur.slots || 1));
 
-    // Helper to check for contiguous empty slots
-    const hasSpace = (arr, start, needed) => {
-      for (let i = 0; i < needed; i++) {
-        if (start + i >= arr.length || arr[start + i]) return false;
-      }
-      return true;
-    };
+      // Helper to check for contiguous empty slots
+      const hasSpace = (arr, start, needed) => {
+        for (let i = 0; i < needed; i++) {
+          if (start + i >= arr.length || arr[start + i]) return false;
+        }
+        return true;
+      };
 
-    let target = -1;
-    const startSearch = si + len;
+      let target = -1;
+      const startSearch = si + len;
 
-    // Search after the current item
-    for (let idx = startSearch; idx <= slotsArray.length - len; idx++) {
-      if (hasSpace(slotsArray, idx, len)) { target = idx; break; }
-    }
-
-    // Wrap around to the beginning if needed
-    if (target === -1) {
-      for (let idx = 0; idx <= si - len; idx++) {
+      // Search after the current item
+      for (let idx = startSearch; idx <= slotsArray.length - len; idx++) {
         if (hasSpace(slotsArray, idx, len)) { target = idx; break; }
       }
-    }
 
-    if (target === -1) {
-      alert("No empty slots available to duplicate this item.");
-      return;
-    }
+      // Wrap around to the beginning if needed
+      if (target === -1) {
+        for (let idx = 0; idx <= si - len; idx++) {
+          if (hasSpace(slotsArray, idx, len)) { target = idx; break; }
+        }
+      }
 
-    tryPlaceMulti(ci, target, cur.name, len, slotsArray, section, cur);
-    saveState(`inventory/chars/${ci}`, state.chars[ci]);
-    renderChars();
-    renderCharList();
-  });
+      if (target === -1) {
+        alert("No empty slots available to duplicate this item.");
+        return;
+      }
+
+      tryPlaceMulti(ci, target, cur.name, len, slotsArray, section, cur);
+      saveState(`inventory/chars/${ci}`, state.chars[ci]);
+      renderChars();
+      renderCharList();
+    });
+  }
 
   // Add event listener for coin amount updates
   if (isHead && (slotObj.hasCoinSlots || (slotObj.name && slotObj.name.toLowerCase().includes('coin')))) {
@@ -346,7 +358,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         e.target.closest('.btn') !== null ||
         e.target.closest('.slot-actions') !== null;
 
-      if (isInteractive) return;
+      if (isInteractive || !isActive) return;
 
       enableWrites();
       const purseKey = `${ci}-${section}-${si}`;
@@ -374,48 +386,51 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     }
 
     // Add event listeners to prevent arrow keys on coin inputs
-    slot.querySelectorAll('.coin-amount').forEach(input => {
-      // Prevent up/down arrow keys from changing the value
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-          e.preventDefault();
-        }
-      });
-      
-      // Handle input changes for coin amounts
-      input.addEventListener('change', (e) => {
-        enableWrites();
-        const coinType = e.target.dataset.coinType;
-        
-        // Calculate total coins excluding the current type
-        let totalOtherCoins = 0;
-        Object.entries(slotObj.coinAmounts || {}).forEach(([type, amount]) => {
-          if (type !== coinType) {
-            totalOtherCoins += amount;
+    if (isActive) {
+      slot.querySelectorAll('.coin-amount').forEach(input => {
+        // Prevent up/down arrow keys from changing the value
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
           }
         });
-        
-        // Limit value to available space in coin purse (100 - other coins)
-        const maxAllowed = 100 - totalOtherCoins;
-        const value = Math.min(maxAllowed, Math.max(0, parseInt(e.target.value) || 0));
-        e.target.value = value; // Update display to show clamped value
-        
-        // Update the coin amount in the state
-        slotObj.coinAmounts = slotObj.coinAmounts || {};
-        slotObj.coinAmounts[coinType] = value;
-        saveState(`inventory/chars/${ci}`, state.chars[ci]);
-        renderChars(); // Re-render to update coin limits
+
+        // Handle input changes for coin amounts
+        input.addEventListener('change', (e) => {
+          enableWrites();
+          const coinType = e.target.dataset.coinType;
+
+          // Calculate total coins excluding the current type
+          let totalOtherCoins = 0;
+          Object.entries(slotObj.coinAmounts || {}).forEach(([type, amount]) => {
+            if (type !== coinType) {
+              totalOtherCoins += amount;
+            }
+          });
+
+          // Limit value to available space in coin purse (100 - other coins)
+          const maxAllowed = 100 - totalOtherCoins;
+          const value = Math.min(maxAllowed, Math.max(0, parseInt(e.target.value) || 0));
+          e.target.value = value; // Update display to show clamped value
+
+          // Update the coin amount in the state
+          slotObj.coinAmounts = slotObj.coinAmounts || {};
+          slotObj.coinAmounts[coinType] = value;
+          saveState(`inventory/chars/${ci}`, state.chars[ci]);
+          renderChars(); // Re-render to update coin limits
+        });
       });
-    });
+    }
     
   }
   
-  slot.addEventListener("click", (e) => {
-    const btn = e.target.closest("button"); 
-    if (!btn) return;
-    if (btn.dataset.action === "remove") {
-      enableWrites(); // Enable writes on remove button
-      const headIdx = si;
+  if (isActive) {
+    slot.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.dataset.action === "remove") {
+        enableWrites(); // Enable writes on remove button
+        const headIdx = si;
       
       // Check if this is a sack in the equipped section
       if (section === "equipped" && slotObj && slotObj.head) {
@@ -439,12 +454,12 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       removeMulti(ci, headIdx, slotsArray, section);
       saveState(`inventory/chars/${ci}`, state.chars[ci]);
       renderChars();
-      renderCharList();
-    } else if (btn.dataset.action === "edit") {
-      enableWrites(); // Enable writes on edit button
-      const cur = slotsArray[si];
-      const name = prompt("Item name:", cur.name); 
-      if (name === null) return;
+        renderCharList();
+      } else if (btn.dataset.action === "edit") {
+        enableWrites(); // Enable writes on edit button
+        const cur = slotsArray[si];
+        const name = prompt("Item name:", cur.name);
+        if (name === null) return;
       
       // Preserve sub-slot properties when editing
       const hasSubSlots = cur.hasSubSlots || false;
@@ -474,41 +489,42 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       
       saveState(`inventory/chars/${ci}`, state.chars[ci]);
       renderChars();
-      renderCharList();
-    } 
-    else if (btn.dataset.action === "use") {
-      // Handle consuming one sub-slot
-      enableWrites();
-      const cur = slotsArray[si];
-      
-      if (cur.hasSubSlots && cur.filledSubSlots > 0) {
-        cur.filledSubSlots--;
+        renderCharList();
+      }
+      else if (btn.dataset.action === "use") {
+        // Handle consuming one sub-slot
+        enableWrites();
+        const cur = slotsArray[si];
 
-        // If all sub-slots are used, ask if the user wants to remove the item
-        if (cur.filledSubSlots === 0) {
-          if (confirm(`All ${cur.subSlotName}s have been used. Remove the item?`)) {
-            removeMulti(ci, si, slotsArray, section);
+        if (cur.hasSubSlots && cur.filledSubSlots > 0) {
+          cur.filledSubSlots--;
+
+          // If all sub-slots are used, ask if the user wants to remove the item
+          if (cur.filledSubSlots === 0) {
+            if (confirm(`All ${cur.subSlotName}s have been used. Remove the item?`)) {
+              removeMulti(ci, si, slotsArray, section);
+            }
           }
-        }
 
-        saveState(`inventory/chars/${ci}`, state.chars[ci]);
-        renderChars();
-        renderCharList();
+          saveState(`inventory/chars/${ci}`, state.chars[ci]);
+          renderChars();
+          renderCharList();
+        }
       }
-    }
-    else if (btn.dataset.action === "refill") {
-      // Handle refilling one sub-slot
-      enableWrites();
-      const cur = slotsArray[si];
-      
-      if (cur.hasSubSlots && cur.filledSubSlots < cur.maxSubSlots) {
-        cur.filledSubSlots++;
-        saveState(`inventory/chars/${ci}`, state.chars[ci]);
-        renderChars();
-        renderCharList();
+      else if (btn.dataset.action === "refill") {
+        // Handle refilling one sub-slot
+        enableWrites();
+        const cur = slotsArray[si];
+
+        if (cur.hasSubSlots && cur.filledSubSlots < cur.maxSubSlots) {
+          cur.filledSubSlots++;
+          saveState(`inventory/chars/${ci}`, state.chars[ci]);
+          renderChars();
+          renderCharList();
+        }
       }
-    }
-  });
+    });
+  }
 
   return slot;
 }

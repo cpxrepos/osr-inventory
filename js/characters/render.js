@@ -27,6 +27,7 @@ function renderChars() {
     if (state.ui.hiddenChars.includes(ci)) {
       return;
     }
+    const isActive = ci === state.activeCharIndex;
     // Initialize the equipped and backpack arrays if they don't exist
     if (!c.equipped || !Array.isArray(c.equipped)) {
       c.equipped = Array(9).fill(null);
@@ -363,6 +364,10 @@ function renderChars() {
     const saveNotesBtn = document.createElement("button");
     saveNotesBtn.className = "btn";
     saveNotesBtn.textContent = "Save";
+    if (!isActive) {
+      saveNotesBtn.disabled = true;
+      saveNotesBtn.style.display = "none";
+    }
     saveNotesBtn.addEventListener("click", () => {
       enableWrites();
       saveState(`inventory/chars/${ci}/notes`, c.notes);
@@ -376,9 +381,13 @@ function renderChars() {
     notesArea.placeholder = "Add notes...";
     notesArea.value = c.notes;
 
-    notesArea.addEventListener("input", () => {
-      c.notes = notesArea.value;
-    });
+    if (isActive) {
+      notesArea.addEventListener("input", () => {
+        c.notes = notesArea.value;
+      });
+    } else {
+      notesArea.disabled = true;
+    }
 
     notesSection.appendChild(notesArea);
     inv.appendChild(notesSection);

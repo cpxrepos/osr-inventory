@@ -11,6 +11,7 @@ This application allows you to track inventory items across characters with real
 - Local storage persistence for offline use
 - Synchronizes when reconnected
 - Character creation with STR-based slot calculations
+- Player-selectable active character to prevent overwriting others' data
 - Encumbrance system that applies speed penalties (120' → 90'/60'/30')
 - Item library with search functionality
 - Drag & drop item management
@@ -171,3 +172,4 @@ window._env_ = {
 - The application uses Firebase Realtime Database for synchronization
 - Each user session has a unique ID to prevent sync loops
 - All character and inventory data is stored in the `inventory` node in the database
+- Only the locally selected character can be edited, guarding against overwriting other players' characters
