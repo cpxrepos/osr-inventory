@@ -199,25 +199,7 @@ section{ background:var(--panel); border:1px solid #202636; border-radius:var(--
   padding: 0;
 }
 .icon-btn.delete-btn { color: var(--danger); }
-.char-row .drag-handle { 
-  color: #454c63; 
-  cursor: grab; 
-  font-size: 14px; 
-  padding: 0 4px; 
-  margin-right: 4px;
-  user-select: none;
-}
-.char-row:active { cursor: grabbing; }
-.char-row.dragging { 
-  opacity: 0.6; 
-  border: 1px dashed var(--accent);
-  background: #182038;
-}
-.char-row.drag-over { 
-  border: 1px solid var(--accent); 
-  box-shadow: 0 0 0 2px rgba(105, 169, 255, 0.3);
-  background: #192135;
-}
+
 
 /* Party area: characters as columns */
 .chars{

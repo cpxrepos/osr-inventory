@@ -1,4 +1,4 @@
-import { state, saveState, enableWrites, setActiveCharIndex } from '../state.js';
+import { state, saveState, enableWrites, toggleCharSelection } from '../state.js';
 import { $, slotsFromSTR } from '../helpers.js';
 import { renderChars } from './render.js';
 import { renderCharList } from './list.js';
@@ -15,7 +15,7 @@ function initCharacterEvents() {
     state.chars.push({ name, str, equipped, backpack, notes: "" });
     const newIndex = state.chars.length - 1;
     saveState(`inventory/chars/${newIndex}`, state.chars[newIndex]);
-    setActiveCharIndex(newIndex);
+    toggleCharSelection(newIndex);
     renderChars();
     renderCharList();
     $("#name").value = "";
