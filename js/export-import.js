@@ -1,5 +1,6 @@
 /* ===== Export/Import Functionality ===== */
 import { state, saveState, enableWrites } from './state.js';
+import { database, ref, remove } from './firebase-config.js';
 import { $ } from './helpers.js';
 import { renderItems } from './items.js';
 import { renderChars, renderCharList } from './characters.js';
@@ -38,6 +39,7 @@ function importData() {
         if (!obj || typeof obj !== "object" || typeof obj.items !== 'object' || !Array.isArray(obj.chars)) throw 0;
 
         // Replace current inventory and character data with imported data
+        const oldLength = state.chars.length;
         state.chars = obj.chars;
         state.items = obj.items || {};
 
@@ -48,7 +50,12 @@ function importData() {
         for (const [id, item] of Object.entries(state.items)) {
           saveState(`items/${id}`, item);
         }
-        saveState('inventory/chars', state.chars);
+        state.chars.forEach((char, idx) => {
+          saveState(`inventory/chars/${idx}`, char);
+        });
+        for (let i = state.chars.length; i < oldLength; i++) {
+          remove(ref(database, `inventory/chars/${i}`));
+        }
         
         // Update all UI components
         renderItems();

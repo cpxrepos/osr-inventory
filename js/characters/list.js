@@ -1,4 +1,5 @@
-import { state, saveState, enableWrites } from '../state.js';
+import { state, saveState, enableWrites, setActiveCharIndex } from '../state.js';
+import { database, ref, remove } from '../firebase-config.js';
 import { $, slotsFromSTR } from '../helpers.js';
 import { renderChars } from './render.js';
 
@@ -18,18 +19,18 @@ function renderCharList() {
   state.chars.forEach((c, i) => {
     const totalSlots = slotsFromSTR(c.str);
     const row = document.createElement("div");
-    
+
     // Initialize hiddenChars array if it doesn't exist
     if (!Array.isArray(state.ui.hiddenChars)) {
       state.ui.hiddenChars = [];
     }
-    
-    // Add character-specific hidden class if character is hidden
+
     const isHidden = state.ui.hiddenChars.includes(i);
-    row.className = `char-row${isHidden ? ' char-hidden' : ''}`;
-    
-    // Add draggable attribute to enable drag functionality
-    row.draggable = true;
+    const isActive = state.activeCharIndex === i;
+    row.className = `char-row${isHidden ? ' char-hidden' : ''}${isActive ? ' active' : ''}`;
+
+    // Only allow dragging the active character
+    row.draggable = isActive;
     row.innerHTML = `
       <div>
         <span class="drag-handle">⋮⋮</span>
@@ -37,6 +38,7 @@ function renderCharList() {
         <span class="meta">— STR ${c.str}, Slots ${totalSlots}</span>
       </div>
       <div class="char-actions">
+        <button class="btn select-btn" data-index="${i}" data-action="select">${isActive ? 'Selected' : 'Select'}</button>
         <button class="icon-btn visibility-btn" data-index="${i}" data-action="toggle-visibility">
           ${isHidden ? '👁️‍🗨️' : '👁️'}
         </button>
@@ -46,11 +48,13 @@ function renderCharList() {
     
     // Add drag event handlers
     row.addEventListener("dragstart", (e) => {
+      if (!isActive) return;
       e.dataTransfer.setData("text/plain", i.toString());
       row.classList.add("dragging");
     });
-    
+
     row.addEventListener("dragend", () => {
+      if (!isActive) return;
       row.classList.remove("dragging");
     });
     
@@ -66,16 +70,23 @@ function renderCharList() {
     row.addEventListener("drop", (e) => {
       e.preventDefault();
       row.classList.remove("drag-over");
-      
+
       const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
       const toIndex = i;
-      
-      if (fromIndex !== toIndex && !isNaN(fromIndex) && fromIndex >= 0 && fromIndex < state.chars.length) {
+
+      if (
+        fromIndex !== toIndex &&
+        !isNaN(fromIndex) &&
+        fromIndex === state.activeCharIndex &&
+        fromIndex >= 0 && fromIndex < state.chars.length
+      ) {
         enableWrites(); // Enable writes on character reordering
-        // Reorder the characters array
         const [movedChar] = state.chars.splice(fromIndex, 1);
         state.chars.splice(toIndex, 0, movedChar);
-        saveState('inventory/chars', state.chars);
+        state.chars.forEach((char, idx) => {
+          saveState(`inventory/chars/${idx}`, char);
+        });
+        setActiveCharIndex(toIndex);
         renderChars();
         renderCharList();
       }
@@ -86,12 +97,29 @@ function renderCharList() {
         const idx = Number(e.currentTarget.dataset.index);
         const action = e.currentTarget.dataset.action;
         if (!Number.isInteger(idx)) return;
-        
-        if (action === "delete") {
+
+        if (action === "select") {
+          setActiveCharIndex(idx);
+          renderChars();
+          renderCharList();
+        }
+        else if (action === "delete") {
+          if (idx !== state.activeCharIndex) return;
           if (confirm(`Delete ${state.chars[idx].name}?`)) {
             enableWrites();
             state.chars.splice(idx, 1);
-            saveState('inventory/chars', state.chars);
+            remove(ref(database, `inventory/chars/${idx}`));
+            state.chars.forEach((char, i) => {
+              saveState(`inventory/chars/${i}`, char);
+            });
+            remove(ref(database, `inventory/chars/${state.chars.length}`));
+            if (state.chars.length === 0) {
+              setActiveCharIndex(null);
+            } else if (state.activeCharIndex === idx) {
+              setActiveCharIndex(Math.min(idx, state.chars.length - 1));
+            } else if (state.activeCharIndex > idx) {
+              setActiveCharIndex(state.activeCharIndex - 1);
+            }
             renderChars();
             renderCharList();
           }

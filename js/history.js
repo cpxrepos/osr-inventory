@@ -2,7 +2,8 @@
 import {
   database,
   ref,
-  get
+  get,
+  remove
 } from './firebase-config.js';
 import { state, saveState } from './state.js';
 
@@ -18,8 +19,14 @@ async function restoreSnapshot(key) {
   const data = snapshot.val();
   if (!data) return null;
 
+  const oldLength = state.chars.length;
   state.chars = data.chars || [];
-  saveState('inventory/chars', state.chars);
+  state.chars.forEach((char, idx) => {
+    saveState(`inventory/chars/${idx}`, char);
+  });
+  for (let i = state.chars.length; i < oldLength; i++) {
+    remove(ref(database, `inventory/chars/${i}`));
+  }
   return data;
 }
 

@@ -1,4 +1,4 @@
-import { state, saveState, enableWrites } from '../state.js';
+import { state, saveState, enableWrites, setActiveCharIndex } from '../state.js';
 import { $, slotsFromSTR } from '../helpers.js';
 import { renderChars } from './render.js';
 import { renderCharList } from './list.js';
@@ -13,7 +13,9 @@ function initCharacterEvents() {
     const equipped = Array(9).fill(null);
     const backpack = Array.from({length: nSlots}, () => null);
     state.chars.push({ name, str, equipped, backpack, notes: "" });
-    saveState('inventory/chars', state.chars);
+    const newIndex = state.chars.length - 1;
+    saveState(`inventory/chars/${newIndex}`, state.chars[newIndex]);
+    setActiveCharIndex(newIndex);
     renderChars();
     renderCharList();
     $("#name").value = "";

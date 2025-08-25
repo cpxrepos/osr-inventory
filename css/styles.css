@@ -175,6 +175,10 @@ section{ background:var(--panel); border:1px solid #202636; border-radius:var(--
   border:1px solid #23293a; border-radius:8px; padding:8px 10px; background:#101626;
   font-size:13px; cursor:grab;
 }
+.char-row.active{
+  border-color: var(--accent);
+  background:#182038;
+}
 .char-row.char-hidden {
   border: 1px dashed #23293a;
   opacity: 0.7;
