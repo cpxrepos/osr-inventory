@@ -27,7 +27,7 @@ function renderChars() {
     if (state.ui.hiddenChars.includes(ci)) {
       return;
     }
-    const isActive = ci === state.activeCharIndex;
+    const isActive = state.selectedCharIndices.includes(ci);
     // Initialize the equipped and backpack arrays if they don't exist
     if (!c.equipped || !Array.isArray(c.equipped)) {
       c.equipped = Array(9).fill(null);

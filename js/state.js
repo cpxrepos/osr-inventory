@@ -15,7 +15,7 @@ import {
 const state = {
   items: {},              // loaded from database
   chars: [],
-  activeCharIndex: null,  // which character is currently editable
+  selectedCharIndices: [],  // which characters are currently editable
   ui: {
     leftCollapsed: false,
     rightCollapsed: false,
@@ -42,6 +42,12 @@ if (localState) {
     localState.items = obj;
   }
   Object.assign(state, localState);
+  if (!Array.isArray(state.selectedCharIndices)) {
+    state.selectedCharIndices = [];
+    if (typeof localState.activeCharIndex === 'number') {
+      state.selectedCharIndices = [localState.activeCharIndex];
+    }
+  }
 }
 
 // Remove any legacy "expanded" flags from coin purses
@@ -67,14 +73,20 @@ let isSyncing = false;
 // Track last update timestamp from Firebase
 let lastInventoryUpdate = 0;
 
-// Track which character is currently selected for editing
-function setActiveCharIndex(idx) {
-  state.activeCharIndex = idx;
+// Track which characters are currently selected for editing
+function toggleCharSelection(idx) {
+  const arr = state.selectedCharIndices;
+  const pos = arr.indexOf(idx);
+  if (pos >= 0) {
+    arr.splice(pos, 1);
+  } else {
+    arr.push(idx);
+  }
   localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
 }
 
-function getActiveCharIndex() {
-  return state.activeCharIndex;
+function getSelectedCharIndices() {
+  return state.selectedCharIndices;
 }
 
 // Save state to local storage and Firebase
@@ -236,6 +248,6 @@ export {
   initFirebaseSync,
   enableWrites,
   updateReadOnlyIndicator,
-  setActiveCharIndex,
-  getActiveCharIndex
+  toggleCharSelection,
+  getSelectedCharIndices
 };

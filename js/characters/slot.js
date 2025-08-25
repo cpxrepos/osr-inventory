@@ -20,7 +20,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   const isEmpty = !slotObj;
   const isHead  = !!slotObj?.head;
   const isLink  = slotObj && (slotObj.link !== undefined);
-  const isActive = ci === state.activeCharIndex;
+  const isActive = state.selectedCharIndices.includes(ci);
 
   slot.className = "slot" + (isEmpty ? " empty" : "");
   slot.dataset.char = ci;
