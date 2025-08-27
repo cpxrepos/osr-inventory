@@ -235,7 +235,7 @@ function renderItems() {
 
       if (await addItem(name, slots, notes, hasSubSlots, maxSubSlots, subSlotName)) {
         // Success, hide the form
-        toggleCreateItemForm();
+        hideCreateItemForm();
       } else {
         // Generic failure message
         alert("Failed to add item. Please try again.");
@@ -468,6 +468,14 @@ function toggleCreateItemForm() {
     if (editForm && !editForm.classList.contains("hidden")) {
       editForm.classList.add("hidden");
     }
+  }
+}
+
+function hideCreateItemForm() {
+  const form = $("#createItemForm");
+  if (form) {
+    form.classList.add("hidden");
+    if (state.ui) state.ui.tempItemNotes = "";
   }
 }
 
