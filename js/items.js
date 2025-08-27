@@ -65,25 +65,35 @@ async function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots
   // Create the new item
   const newItem = { name, slots, notes, hasSubSlots, maxSubSlots, subSlotName };
 
+  // Add the item to Firebase; any failure here means the item wasn't created
+  let id;
   try {
     const newRef = await push(ref(database, 'items'), newItem);
-    const id = newRef.key;
+    id = newRef.key;
     state.items[id] = newItem;
+  } catch (err) {
+    console.error('Failed to add item:', err);
+    return false;
+  }
 
-    // Record history snapshot
+  // Record history snapshot, but don't fail item creation if this errors
+  try {
     await push(ref(database, 'items/history'), {
       items: state.items,
       timestamp: serverTimestamp(),
       sessionId
     });
-
-    // Update UI
-    renderItems();
-    return true;
   } catch (err) {
-    console.error('Failed to add item:', err);
-    return false;
+    console.error('Failed to record item history:', err);
   }
+
+  // Update UI; log errors but treat item as added
+  try {
+    renderItems();
+  } catch (err) {
+    console.error('Failed to render items:', err);
+  }
+  return true;
 }
 
 // Edit an existing item
