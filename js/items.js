@@ -345,7 +345,11 @@ function renderItems() {
   
   $("#cancelEditBtn")?.addEventListener("click", toggleEditItemForm);
 
-  const entries = Object.entries(state.items).filter(([id, i]) => !q || i.name.toLowerCase().includes(q));
+  const entries = Object.entries(state.items).filter(([id, i]) => {
+    const nameMatch = i.name?.toLowerCase().includes(q);
+    const notesMatch = i.notes?.toLowerCase().includes(q);
+    return !q || nameMatch || notesMatch;
+  });
   if (entries.length === 0) {
     const div = document.createElement("div");
     div.className = "muted";
