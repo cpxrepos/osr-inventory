@@ -67,7 +67,13 @@ To run the application, you need to serve it from a web server (not just open th
 
 ## Testing the Application
 
-A comprehensive testing guide is included in the `sync-test.html` file. To run the tests:
+Automated unit tests verify core helper utilities. Run them with:
+
+```bash
+npm test
+```
+
+In addition, a comprehensive manual testing guide is available in `sync-test.html`. To use it:
 
 1. Start the local server using one of the methods above
 2. Navigate to http://localhost:8000/sync-test.html (adjust port if different)
