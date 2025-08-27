@@ -2,6 +2,6 @@
   "type": "module",
   "scripts": {
     "generate-env": "node scripts/generate-env.js",
-    "test": "echo \"No tests specified\""
+    "test": "node --test"
   }
 }
