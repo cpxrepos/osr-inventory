@@ -48,6 +48,30 @@ function initItemSync() {
   });
 }
 
+// Record an item history snapshot and trim to the latest 20 entries
+async function recordItemHistorySnapshot(limit = 20) {
+  try {
+    const historyRef = ref(database, 'items/history');
+    await push(historyRef, {
+      items: state.items,
+      timestamp: serverTimestamp(),
+      sessionId
+    });
+
+    const snapshot = await get(historyRef);
+    const data = snapshot.val() || {};
+    const entries = Object.entries(data)
+      .sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+
+    while (entries.length > limit) {
+      const [key] = entries.shift();
+      await remove(ref(database, `items/history/${key}`));
+    }
+  } catch (err) {
+    console.error('Failed to record item history:', err);
+  }
+}
+
 // Add a new item to the database
 async function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots = 1, subSlotName = "") {
   enableWrites(); // Ensure we can write to Firebase
@@ -76,16 +100,8 @@ async function addItem(name, slots, notes = "", hasSubSlots = false, maxSubSlots
     return false;
   }
 
-  // Record history snapshot, but don't fail item creation if this errors
-  try {
-    await push(ref(database, 'items/history'), {
-      items: state.items,
-      timestamp: serverTimestamp(),
-      sessionId
-    });
-  } catch (err) {
-    console.error('Failed to record item history:', err);
-  }
+  // Record history snapshot
+  await recordItemHistorySnapshot();
 
   // Update UI; log errors but treat item as added
   try {
@@ -117,11 +133,7 @@ async function editItem(id, name, slots, notes = "", hasSubSlots = false, maxSub
     await set(ref(database, `items/${id}`), state.items[id]);
 
     // Record history snapshot
-    await push(ref(database, 'items/history'), {
-      items: state.items,
-      timestamp: serverTimestamp(),
-      sessionId
-    });
+    await recordItemHistorySnapshot();
 
     // Update UI
     renderItems();
@@ -145,11 +157,7 @@ async function deleteItem(id) {
     await remove(ref(database, `items/${id}`));
 
     // Record history snapshot
-    await push(ref(database, 'items/history'), {
-      items: state.items,
-      timestamp: serverTimestamp(),
-      sessionId
-    });
+    await recordItemHistorySnapshot();
 
     // Update UI
     renderItems();
