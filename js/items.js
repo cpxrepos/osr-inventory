@@ -15,6 +15,12 @@ import {
   remove
 } from './firebase-config.js';
 
+// Remove the "history" branch from item data to avoid recursive nesting
+function sanitizeItems(data = {}) {
+  const { history, ...items } = data;
+  return items;
+}
+
 // Load items from Firebase. No local fallback is used; if no data exists the
 // item list is initialized as an empty object.
 async function loadItems() {
@@ -22,7 +28,7 @@ async function loadItems() {
     const itemsRef = ref(database, 'items');
     const snapshot = await get(itemsRef);
     if (snapshot.exists() && snapshot.val()) {
-      state.items = snapshot.val();
+      state.items = sanitizeItems(snapshot.val());
     } else {
       state.items = {};
     }
@@ -41,7 +47,7 @@ function initItemSync() {
   const itemsRef = ref(database, 'items');
   onValue(itemsRef, (snapshot) => {
     const data = snapshot.val() || {};
-    state.items = data;
+    state.items = sanitizeItems(data);
     // Save to local storage; saveState() also handles read-only safeguards
     saveState('items', state.items);
     renderItems();
@@ -52,8 +58,9 @@ function initItemSync() {
 async function recordItemHistorySnapshot(limit = 20) {
   try {
     const historyRef = ref(database, 'items/history');
+    const itemsSnapshot = sanitizeItems(state.items);
     await push(historyRef, {
-      items: state.items,
+      items: itemsSnapshot,
       timestamp: serverTimestamp(),
       sessionId
     });
