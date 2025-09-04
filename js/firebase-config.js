@@ -15,6 +15,7 @@ import {
   runTransaction,
   remove
 } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js';
+import { safeGet, safeSet } from './storage.js';
 
 // Firebase configuration loaded from environment variables
 const firebaseConfig = {
@@ -32,10 +33,10 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 // Generate a unique ID for this user's session if they don't have one
-let sessionId = localStorage.getItem("inventory_session_id");
+let sessionId = safeGet('inventory_session_id');
 if (!sessionId) {
   sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-  localStorage.setItem("inventory_session_id", sessionId);
+  safeSet('inventory_session_id', sessionId);
 }
 
 // Export Firebase modules and initialized instances

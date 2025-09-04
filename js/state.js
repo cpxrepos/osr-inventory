@@ -11,6 +11,7 @@ import {
   get,
   remove
 } from './firebase-config.js';
+import { safeGet, safeSet } from './storage.js';
 
 // Initialize state with defaults
 const state = {
@@ -27,10 +28,12 @@ const state = {
 
 // Load state from local storage initially (for quick startup)
 function loadLocalState() {
-  try { 
-    return JSON.parse(localStorage.getItem("inv_external_items_v5")||""); 
-  } catch { 
-    return null; 
+  const raw = safeGet('inv_external_items_v5');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
 }
 
@@ -83,7 +86,7 @@ function toggleCharSelection(idx) {
   } else {
     arr.push(idx);
   }
-  localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+  safeSet('inv_external_items_v5', JSON.stringify(state));
 }
 
 function getSelectedCharIndices() {
@@ -120,7 +123,7 @@ async function saveState(path = null, value) {
   removeExpandedFlags();
 
   // Always save to localStorage for quick loading next time
-  localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+  safeSet('inv_external_items_v5', JSON.stringify(state));
 
   // Don't sync to Firebase if we're currently processing a sync from Firebase
   // or if we're in read-only mode and haven't had user interaction yet
@@ -164,7 +167,7 @@ async function saveState(path = null, value) {
       if (typeof data.lastUpdated === 'number') {
         lastInventoryUpdate = data.lastUpdated;
       }
-      localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+      safeSet('inv_external_items_v5', JSON.stringify(state));
       const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
       document.dispatchEvent(syncEvent);
       isSyncing = false;
@@ -248,7 +251,7 @@ function initFirebaseSync() {
     }
     
     // Also update localStorage for faster loading next time
-    localStorage.setItem("inv_external_items_v5", JSON.stringify(state));
+      safeSet('inv_external_items_v5', JSON.stringify(state));
     
     // Trigger UI update events
     const syncEvent = new CustomEvent('state-sync', { detail: { source: 'firebase' } });
