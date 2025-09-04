@@ -8,7 +8,8 @@ import {
   push,
   serverTimestamp,
   sessionId,
-  get
+  get,
+  remove
 } from './firebase-config.js';
 
 // Initialize state with defaults
@@ -89,6 +90,30 @@ function getSelectedCharIndices() {
   return state.selectedCharIndices;
 }
 
+// Record a history snapshot and trim to the latest 20 entries
+async function recordHistorySnapshot(limit = 20) {
+  try {
+    const historyRef = ref(database, 'inventory/history');
+    await push(historyRef, {
+      chars: state.chars,
+      timestamp: serverTimestamp(),
+      sessionId
+    });
+
+    const snapshot = await get(historyRef);
+    const data = snapshot.val() || {};
+    const entries = Object.entries(data)
+      .sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+
+    while (entries.length > limit) {
+      const [key] = entries.shift();
+      await remove(ref(database, `inventory/history/${key}`));
+    }
+  } catch (err) {
+    console.error('Failed to record history snapshot:', err);
+  }
+}
+
 // Save state to local storage and Firebase
 async function saveState(path = null, value) {
   // Clean up any UI-only flags before persisting
@@ -104,11 +129,7 @@ async function saveState(path = null, value) {
   if (path) {
     if (path.startsWith('inventory/')) {
       // Backup the current state before applying an inventory update
-      push(ref(database, 'inventory/history'), {
-        chars: state.chars,
-        timestamp: serverTimestamp(),
-        sessionId
-      });
+      recordHistorySnapshot();
 
       // Update the specific inventory path with metadata
       const inventoryRef = ref(database, 'inventory');
@@ -126,11 +147,7 @@ async function saveState(path = null, value) {
   }
 
   // Backup current state before saving
-  push(ref(database, 'inventory/history'), {
-    chars: state.chars,
-    timestamp: serverTimestamp(),
-    sessionId
-  });
+  recordHistorySnapshot();
 
   const inventoryRef = ref(database, 'inventory');
 
