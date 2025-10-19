@@ -225,7 +225,7 @@ function renderChars() {
       <div class="char-meta">
           <span class="pill">STR ${c.str}</span>
           <span class="pill">Slots ${displaySlots}</span>
-          <span class="pill coin-pill">Coins ${formattedCoinValue} GP</span>
+          <span class="pill coin-pill">Wealth ${formattedCoinValue} GP</span>
           <span class="pill ${encClass}">${slowdownLabel(empty, totalSlots)}</span>
           <span class="pill ${effFt >= 120 ? 'enc-good' : effFt >= 90 ? 'enc-warn' : effFt >= 60 ? 'enc-warn' : 'enc-bad'}">Speed ${fmtSpeed(effFt)}</span>
         </div>
