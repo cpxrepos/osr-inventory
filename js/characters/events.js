@@ -1,6 +1,7 @@
 import { state, saveState, enableWrites, toggleCharSelection } from '../state.js';
 import { $, slotsFromSTR } from '../helpers.js';
 import { renderChars } from './render.js';
+import { ensureBeltPouch } from './belt-pouch.js';
 import { renderCharList } from './list.js';
 
 function initCharacterEvents() {
@@ -12,7 +13,9 @@ function initCharacterEvents() {
     const nSlots = slotsFromSTR(str);
     const equipped = Array(9).fill(null);
     const backpack = Array.from({length: nSlots}, () => null);
-    state.chars.push({ name, str, equipped, backpack, notes: "" });
+    const newChar = { name, str, equipped, backpack, notes: "" };
+    ensureBeltPouch(newChar);
+    state.chars.push(newChar);
     const newIndex = state.chars.length - 1;
     saveState(`inventory/chars/${newIndex}`, state.chars[newIndex]);
     toggleCharSelection(newIndex);

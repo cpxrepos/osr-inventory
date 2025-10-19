@@ -57,7 +57,7 @@ if (localState) {
 // Remove any legacy "expanded" flags from coin purses
 function removeExpandedFlags() {
   state.chars.forEach(char => {
-    ['equipped', 'backpack', 'smallSack', 'largeSack'].forEach(section => {
+    ['equipped', 'backpack', 'smallSack', 'largeSack', 'beltPouch'].forEach(section => {
       const arr = char[section];
       if (!Array.isArray(arr)) return;
       arr.forEach(slot => {

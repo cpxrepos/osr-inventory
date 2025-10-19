@@ -8,6 +8,8 @@ import {
   slowdownLabel
 } from '../helpers.js';
 
+import { ensureBeltPouch } from './belt-pouch.js';
+
 import { createSlot } from './slot.js';
 import { renderCharList } from './list.js';
 
@@ -62,6 +64,12 @@ function renderChars() {
       saveState(`inventory/chars/${ci}/equipped`, c.equipped);
     }
     
+    // Ensure belt pouch slot exists and is initialized
+    const beltPouchChanged = ensureBeltPouch(c);
+    if (beltPouchChanged) {
+      saveState(`inventory/chars/${ci}/beltPouch`, c.beltPouch);
+    }
+
     // Initialize notes field if missing
     if (typeof c.notes !== "string") {
       c.notes = "";
@@ -211,7 +219,23 @@ function renderChars() {
     
     equippedSection.appendChild(equippedCol);
     inv.appendChild(equippedSection);
-    
+
+    // Belt pouch section (always a single dedicated coin purse slot)
+    const beltSection = document.createElement("div");
+    beltSection.className = "inventory-section";
+
+    const beltTitle = document.createElement("div");
+    beltTitle.className = "section-title";
+    beltTitle.innerHTML = `<span>Belt Pouch</span>`;
+    beltSection.appendChild(beltTitle);
+
+    const beltCol = document.createElement("div");
+    beltCol.className = "slots";
+    const beltSlot = createSlot(c.beltPouch[0], ci, 0, "beltPouch", c.beltPouch, 1, renderChars, renderCharList);
+    beltCol.appendChild(beltSlot);
+    beltSection.appendChild(beltCol);
+    inv.appendChild(beltSection);
+
     // Backpack section
     const backpackSection = document.createElement("div");
     backpackSection.className = "inventory-section";
