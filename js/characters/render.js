@@ -14,7 +14,7 @@ import { createSlot } from './slot.js';
 import { renderCharList } from './list.js';
 
 const COIN_CONVERSION_TO_GP = {
-  PP: 5,
+  PP: 10,
   GP: 1,
   EP: 0.5,
   SP: 0.1,
