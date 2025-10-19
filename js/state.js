@@ -117,6 +117,12 @@ async function recordHistorySnapshot(limit = 20) {
   }
 }
 
+// Persist state changes to localStorage without syncing to Firebase
+function saveLocalUiState() {
+  removeExpandedFlags();
+  safeSet('inv_external_items_v5', JSON.stringify(state));
+}
+
 // Save state to local storage and Firebase
 async function saveState(path = null, value) {
   // Clean up any UI-only flags before persisting
@@ -265,6 +271,7 @@ function initFirebaseSync() {
 export {
   state,
   saveState,
+  saveLocalUiState,
   initFirebaseSync,
   enableWrites,
   updateReadOnlyIndicator,

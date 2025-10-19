@@ -1,5 +1,5 @@
 /* ===== Characters Management ===== */
-import { state, saveState, enableWrites } from '../state.js';
+import { state, saveState, saveLocalUiState, enableWrites } from '../state.js';
 import {
   $,
   slotsFromSTR,
@@ -494,7 +494,7 @@ function renderChars() {
           state.ui.smallSackCollapsed[charIndex] = !state.ui.smallSackCollapsed[charIndex];
         }
         
-        saveState('ui', state.ui);
+        saveLocalUiState();
         renderChars();
       });
     });
