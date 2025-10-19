@@ -1,5 +1,5 @@
 /* ===== Characters Management ===== */
-import { state, saveState, enableWrites } from '../state.js';
+import { state, saveState, saveLocalUiState, enableWrites } from '../state.js';
 import {
   $,
   slotsFromSTR,
@@ -475,6 +475,8 @@ function renderChars() {
     notesSection.appendChild(notesArea);
     inv.appendChild(notesSection);
 
+    charEl.appendChild(inv);
+
     // Add event listeners for collapse buttons
     charEl.querySelectorAll('.collapse-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -482,7 +484,7 @@ function renderChars() {
         // even if a child element within the button was clicked
         const charIndex = parseInt(e.currentTarget.dataset.char, 10);
         const section = e.currentTarget.dataset.section;
-        
+
         // Toggle the collapsed state
         if (section === 'equipped') {
           state.ui.equippedCollapsed[charIndex] = !state.ui.equippedCollapsed[charIndex];
@@ -493,14 +495,13 @@ function renderChars() {
         } else if (section === 'smallSack') {
           state.ui.smallSackCollapsed[charIndex] = !state.ui.smallSackCollapsed[charIndex];
         }
-        
-        saveState('ui', state.ui);
+
+        saveLocalUiState();
         renderChars();
       });
     });
-    
-    charEl.appendChild(inv);
-  wrap.appendChild(charEl);
+
+    wrap.appendChild(charEl);
   });
 }
 
