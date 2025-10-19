@@ -83,6 +83,9 @@ function tryPlaceMulti(charIdx, start, name, needed, charSlots, section, source 
       newItem.hasCoinSlots = true;
       newItem.coinTypes = source.coinTypes || ["PP", "GP", "SP", "CP", "EP", "Gems"];
       newItem.coinAmounts = source.coinAmounts ? {...source.coinAmounts} : {};
+      if (typeof source.coinLimit === 'number') {
+        newItem.coinLimit = source.coinLimit;
+      }
     }
   }
   
@@ -189,6 +192,9 @@ function moveMulti(fromChar, headIndex, toChar, toStart, len, fromCharSlots, toC
       newItem.hasCoinSlots = true;
       newItem.coinTypes = coinTypes;
       newItem.coinAmounts = {...coinAmounts}; // Create a copy to avoid reference issues
+      if (typeof sourceItem.coinLimit === 'number') {
+        newItem.coinLimit = sourceItem.coinLimit;
+      }
     }
     
     // Create a new item head at destination

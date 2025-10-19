@@ -21,6 +21,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   const isHead  = !!slotObj?.head;
   const isLink  = slotObj && (slotObj.link !== undefined);
   const isActive = state.selectedCharIndices.includes(ci);
+  const isBeltPouch = section === "beltPouch";
 
   slot.className = "slot" + (isEmpty ? " empty" : "");
   slot.dataset.char = ci;
@@ -59,7 +60,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   if (isEmpty) {
     slot.innerHTML = `<span class="item-tag">Empty</span>`;
 
-    if (isActive) {
+    if (isActive && !isBeltPouch) {
       // Add double click handler for empty slots to add new items
       slot.addEventListener("dblclick", () => {
         enableWrites(); // Enable writes on item edit
@@ -126,19 +127,28 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
 // Add coin tracking if item is a Coin Purse
     else if (slotObj.hasCoinSlots || (slotObj.name && slotObj.name.toLowerCase().includes('coin'))) {
       // If this is a coin-related item but missing proper coin purse properties, add them
+      let coinPropsUpdated = false;
+
       if (!slotObj.hasCoinSlots) {
         console.log(`Converting ${slotObj.name} to proper coin purse`);
         slotObj.hasCoinSlots = true;
         slotObj.coinTypes = ["PP", "GP", "SP", "CP", "EP", "Gems"];
+        coinPropsUpdated = true;
       }
-      
+
+      if (typeof slotObj.coinLimit !== 'number' || Number.isNaN(slotObj.coinLimit)) {
+        slotObj.coinLimit = 100;
+        coinPropsUpdated = true;
+      }
+
       // Initialize coin amounts if they don't exist
       if (!slotObj.coinAmounts) {
         slotObj.coinAmounts = {};
         (slotObj.coinTypes || ["PP", "GP", "SP", "CP", "EP", "Gems"]).forEach(type => {
           slotObj.coinAmounts[type] = 0;
         });
-        
+        coinPropsUpdated = true;
+
         // If the name contains a coin amount like "32gp", set the initial amount
         if (slotObj.name && slotObj.name.toLowerCase().includes('coin')) {
           const match = slotObj.name.match(/(\d+)([a-z]+)/i);
@@ -151,6 +161,8 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             }
           }
         }
+      }
+      if (coinPropsUpdated) {
         saveState(`inventory/chars/${ci}`, state.chars[ci]);
       }
       // Determine if this coin purse is currently expanded (client-side only)
@@ -158,6 +170,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       const isExpanded = expandedCoinPurses.has(purseKey);
 
       // Calculate total coins and build a summary of coin amounts
+      const coinLimit = slotObj.coinLimit || 100;
       let totalCoins = 0;
       const valueParts = [];
       (slotObj.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"]).forEach(coinType => {
@@ -173,15 +186,16 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
       // Add collapsed summary or expanded coin inputs - use CSS classes instead of inline styles
       slotContent += `
         <div class="coin-summary ${isExpanded ? 'hidden' : ''}">
-          <span>${totalCoins}/100 coins (${formattedValue})</span>
+          <span>${totalCoins}/${coinLimit} coins (${formattedValue})</span>
         </div>
         <div class="coin-slots-container ${isExpanded ? '' : 'hidden'}">
       `;
-      
+
       // Create inputs for each coin type
       (slotObj.coinTypes || ["PP","GP", "SP", "CP", "EP", "Gems"]).forEach(coinType => {
         const amount = slotObj.coinAmounts[coinType] || 0;
         const coinColor = getCoinColor(coinType);
+        const remaining = Math.max(0, coinLimit - (totalCoins - amount));
         slotContent += `
           <div class="coin-type-row">
             <span class="coin-icon" style="background-color: ${coinColor};">${coinType}</span>
@@ -189,12 +203,12 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
               data-coin-type="${coinType}"
               value="${amount}"
               min="0"
-              max="${100 - (totalCoins - amount)}"
+              max="${remaining}"
               data-char="${ci}"
               data-slot="${si}"
               data-section="${section}"
               ${isActive ? '' : 'disabled'} />
-            
+
           </div>
         `;
       });
@@ -203,7 +217,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     }
 
     slotContent += `</div>`;
-    if (isActive) {
+    if (isActive && !isBeltPouch) {
       slotContent += `
       <span class="slot-actions">
         <button class="btn" data-action="edit">Edit</button>
@@ -264,7 +278,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   }
 
   // Make multi-slot heads draggable
-  if (isHead && isActive) {
+  if (isHead && isActive && !isBeltPouch) {
     slot.draggable = true;
     slot.addEventListener("dragstart", e => {
       e.dataTransfer.setData("text/plain", JSON.stringify({
@@ -278,7 +292,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
   }
 
   // Edit / Remove and context actions only for active character
-  if (isHead && isActive) {
+  if (isHead && isActive && !isBeltPouch) {
     slot.addEventListener("dblclick", () => {
       enableWrites(); // Enable writes on item edit
       const cur = slotsArray[si];
@@ -408,8 +422,9 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
             }
           });
 
-          // Limit value to available space in coin purse (100 - other coins)
-          const maxAllowed = 100 - totalOtherCoins;
+          // Limit value to available space in coin purse (coinLimit - other coins)
+          const coinLimit = slotObj.coinLimit || 100;
+          const maxAllowed = Math.max(0, coinLimit - totalOtherCoins);
           const value = Math.min(maxAllowed, Math.max(0, parseInt(e.target.value) || 0));
           e.target.value = value; // Update display to show clamped value
 
@@ -424,7 +439,7 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
     
   }
   
-  if (isActive) {
+  if (isActive && !isBeltPouch) {
     slot.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
       if (!btn) return;
@@ -482,7 +497,8 @@ function createSlot(slotObj, ci, si, section, slotsArray, backpackSlots, renderC
         subSlotName,
         hasCoinSlots,
         coinTypes,
-        coinAmounts
+        coinAmounts,
+        coinLimit: cur.coinLimit ?? 100
       };
       
       for (let k = 1; k < cur.slots; k++) slotsArray[si + k] = { link: si };
