@@ -13,9 +13,64 @@ import { ensureBeltPouch } from './belt-pouch.js';
 import { createSlot } from './slot.js';
 import { renderCharList } from './list.js';
 
+const COIN_CONVERSION_TO_GP = {
+  PP: 5,
+  GP: 1,
+  EP: 0.5,
+  SP: 0.1,
+  CP: 0.01,
+  Gems: 1
+};
+
+const COIN_SECTIONS = ['beltPouch', 'equipped', 'backpack', 'smallSack', 'largeSack'];
+
+function calculateCoinValueInGP(char) {
+  let totalValue = 0;
+
+  COIN_SECTIONS.forEach(section => {
+    const slots = char[section];
+    if (!Array.isArray(slots)) return;
+
+    slots.forEach(slot => {
+      if (!slot || !slot.head) return;
+
+      const isCoinContainer = slot.hasCoinSlots || (slot.name && slot.name.toLowerCase().includes('coin'));
+      if (!isCoinContainer) return;
+
+      const coinAmounts = slot.coinAmounts || {};
+      let entries = Object.entries(coinAmounts);
+
+      if (!entries.length && Array.isArray(slot.coinTypes)) {
+        entries = slot.coinTypes.map(type => [type, 0]);
+      }
+
+      entries.forEach(([type, rawAmount]) => {
+        const amount = Number(rawAmount) || 0;
+        if (!amount) return;
+
+        const gpFactor = COIN_CONVERSION_TO_GP[type] ?? 1;
+        totalValue += amount * gpFactor;
+      });
+    });
+  });
+
+  return totalValue;
+}
+
+function formatCoinValue(value) {
+  if (!Number.isFinite(value)) return '0';
+
+  const rounded = Math.round(value * 100) / 100;
+  if (Number.isInteger(rounded)) {
+    return String(rounded);
+  }
+
+  return rounded.toFixed(2);
+}
+
 // Render characters in the center panel
 function renderChars() {
-  const wrap = $("#chars"); 
+  const wrap = $("#chars");
   if (!wrap) return;
   wrap.innerHTML = "";
 
@@ -150,6 +205,9 @@ function renderChars() {
     const factor = Math.min(backpackFactor, equippedSpeedFactor);
     const effFt = Math.max(0, Math.round(120 * factor)); // fixed base speed
 
+    const totalCoinValueGP = calculateCoinValueInGP(c);
+    const formattedCoinValue = formatCoinValue(totalCoinValueGP);
+
     const charEl = document.createElement("div");
     charEl.className = "char";
 
@@ -167,6 +225,7 @@ function renderChars() {
       <div class="char-meta">
           <span class="pill">STR ${c.str}</span>
           <span class="pill">Slots ${displaySlots}</span>
+          <span class="pill coin-pill">Coins ${formattedCoinValue} GP</span>
           <span class="pill ${encClass}">${slowdownLabel(empty, totalSlots)}</span>
           <span class="pill ${effFt >= 120 ? 'enc-good' : effFt >= 90 ? 'enc-warn' : effFt >= 60 ? 'enc-warn' : 'enc-bad'}">Speed ${fmtSpeed(effFt)}</span>
         </div>

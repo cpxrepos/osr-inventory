@@ -215,6 +215,11 @@ section{ background:var(--panel); border:1px solid #202636; border-radius:var(--
 .char-name{ font-size:16px; font-weight:700; }
 .char-meta{ margin-left:auto; display:flex; gap:10px; font-size:12px; color:#8b93a7; flex-wrap:wrap; }
 .pill{ padding:2px 8px; border-radius:999px; border:1px solid #2a3042; }
+.pill.coin-pill{
+  border-color:#ffd700;
+  color:#ffd700;
+  background:rgba(255,215,0,0.08);
+}
 .enc-good{ color:var(--good); border-color:#274136; }
 .enc-warn{ color:var(--warn); border-color:#4b3f22; }
 .enc-bad{  color:var(--bad);  border-color:#4a2222; }
